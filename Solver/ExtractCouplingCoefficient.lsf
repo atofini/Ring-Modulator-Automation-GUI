@@ -1,0 +1,16 @@
+switchtolayout;
+clear;
+runsetup;
+run;
+S = getresult("FDTD::ports::coupled","S");
+select("::model");
+gap = num2str(get("gap")/1e-9);
+L = num2str(get("coupling_length")/1e-6);
+R =  num2str(get("radius")/1e-6);
+Slab = num2str(get("slab_height")/1e-9);
+power_coupling = abs(S.S)^2;
+f=S.f;
+lambda=S.lambda;
+
+
+

@@ -1,0 +1,101 @@
+switchtolayout;
+
+#Listing all paths
+cwd = pwd;
+Eye_PAM4_directory = cwd + "/Database/Eye_PAM4/";
+mode_directory = cwd + "/Database/Mode/";
+
+if (exist("Running_Script") == 0){
+    laser_lambda = 1547.4;
+    V0 = 0;
+    V1 = 2;
+    V2 = 4;
+    V3 = 6;
+    start_wavelength = 1500;
+    stop_wavelength = 1600;
+    radius = 15e-6;
+    slab_height = 110e-9;
+    L = 0;
+    gap = 150e-9;
+    loss = 3406.22;
+    bitrate = 5;
+}
+bitrate = bitrate*1e9;
+
+
+
+start_freq = c/(start_wavelength*1e-9);
+stop_freq = c/(stop_wavelength*1e-9);
+# currently setting up so modulation covers half the ring
+circ = 2*pi*radius + 2*L;
+
+# Setting simulation parameters
+set("bitrate",bitrate);
+set("simulation input","sequence length");
+set("samples per bit",1024);
+set("sequence length",256);
+
+# Setting laser frequency
+f = c/(laser_lambda*1e-9);
+select("CWL_1");
+set("frequency",f);
+
+# Setting directional coupler load file
+select("C_1");
+set("input parameter","table");
+set("load from file",1);
+filename_CC = Eye_PAM4_directory + coupler_file + ".txt";
+set("measurement filename 1",filename_CC);
+set("measurement filename 2",filename_CC);
+set("single tap filter",1);
+
+
+
+
+
+# Setting waveguide loss and .ldf
+cd(mode_directory);
+select("WGD_1"); 
+filename_active = mode_directory + waveguide_file + ".ldf";
+set("loss",propagation_loss); 
+#set("loss",0); 
+set("propagation loss",true); # this is actuall absorption and bend loss
+set("ldf filename",filename_active);
+set("digital filter",false);
+set("delay compensation",3);
+
+# Setting optimal modulator file
+cd(Eye_PAM4_directory);
+select("OM_1");
+set("length",circ);
+set("frequency",f);
+set("load from file",1);
+neff_filename = Eye_PAM4_directory + waveguide_file + ".txt";
+set("measurement filename",neff_filename);
+
+
+# Setting voltage levels
+select("DC_1");
+set("amplitude",V0);
+select("DC_2");
+set("amplitude",V1);
+select("DC_3");
+set("amplitude",V2);
+select("DC_4");
+set("amplitude",V3);
+
+# Saving file first
+filename = "Eye_PAM4_" + num2str(Eye_Data_ID) + ".icp";
+save(filename);
+
+run;
+
+
+result =  getresult("EYE_1","eye diagram");
+
+
+dataname = "Eye_PAM4_"+ num2str(Eye_Data_ID) + '.mat';
+matlabsave(dataname, result);
+
+# switching back to orignal for completeness not sure if needed 
+cd(cwd);

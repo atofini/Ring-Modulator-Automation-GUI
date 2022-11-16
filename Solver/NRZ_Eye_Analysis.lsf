@@ -1,0 +1,204 @@
+switchtolayout;
+deleteall;
+
+#Listing all paths
+
+cwd = pwd;
+Eye_NRZ_directory = cwd + "/Database/Eye_NRZ/";
+mode_directory = cwd + "/Database/Mode/";
+
+cd(Eye_NRZ_directory);
+
+if (exist("Running_Script") == 0){
+    laser_lambda = 1549.8518;
+    Vmin = 0;
+    Vmax = 2;
+    start_wavelength = 1500;
+    stop_wavelength = 1600;
+    radius = 15e-6;
+    slab_height = 110e-9;
+    L = 0;
+    gap = 250e-9;
+    loss = 3406.22;
+    bitrate = 5;
+}
+
+bitrate = bitrate*1e9;
+
+Vbias = Vmin;
+Vamp = (Vmax-Vmin);
+
+start_freq = c/(start_wavelength*1e-9);
+stop_freq = c/(stop_wavelength*1e-9);
+# currently setting up so modulation covers half the ring
+circ = 2*pi*radius + 2*L;
+
+
+
+# Setting simulation parameters
+set("bitrate",bitrate);
+set("simulation input","sequence length");
+set("samples per bit",1024);
+set("sequence length",256);
+
+f = c/(laser_lambda*1e-9);
+addelement("CW LASER");
+set("x position",-100);
+set("y position",200);
+set("frequency",f);
+
+
+
+addelement("Waveguide Coupler");
+set("x position",300);
+set("y position",219);
+set("input parameter","table");
+set("load from file",1);
+filename_CC = Eye_NRZ_directory + coupler_file + ".txt";
+set("measurement filename 1",filename_CC);
+set("measurement filename 2",filename_CC);
+set("single tap filter",1);
+
+
+
+
+cd(mode_directory);
+addelement("MODE Waveguide");
+set("x position",400);
+set("y position",500);
+set("length",circ);
+rotateelement("WGD_1");
+filename_active = mode_directory + waveguide_file + ".ldf";
+set("loss",propagation_loss);  
+set("propagation loss",true); # this is actuall absorption and bend loss
+set("ldf filename",filename_active);
+set("digital filter",false);
+set("delay compensation",3);
+
+cd(Eye_NRZ_directory);
+modulator_x = 400;
+modulator_y = 350;
+modulator_f = c/(laser_lambda*1e-9);
+addelement("Optical Modulator Measured");
+rotateelement("OM_1");
+set("x position",400);
+set("y position",350);
+set("length",circ);
+set("frequency",modulator_f);
+set("load from file",1);
+neff_filename = Eye_NRZ_directory + waveguide_file + ".txt";
+set("measurement filename",neff_filename);
+
+PIN_x = 200;
+PIN_y = -200;
+addelement("PIN Photodetector");
+set("x position",PIN_x );
+set("y position",PIN_y);
+set("enable thermal noise", false);
+set("enable shot noise",false);
+set("convert noise bins",false);
+
+Filter_x = PIN_x+200;
+Filter_y = PIN_y;
+addelement("LP Butterworth Filter");
+set("x position",Filter_x);
+set("y position",Filter_y);
+
+Osc_x = Filter_x + 200;
+Osc_y = Filter_y-100;
+addelement("Oscilloscope");
+set("x position",Osc_x);
+set("y position",Osc_y);
+
+Eye_x = Filter_x + 200;
+Eye_y = Filter_y+10;
+addelement("Eye Diagram");
+set("x position",Eye_x);
+set("y position",Eye_y);
+set('ignore start periods', 0);
+set('ignore end periods', 0);
+set("limit time range",true);
+set("start time", 5/bitrate);
+set("stop time",1);
+
+
+PRBS_x  = modulator_x + 300;
+PRBS_y = modulator_y - 400;
+addelement("PRBS Generator");
+set("x position",PRBS_x);
+set("y position",PRBS_y);
+
+NRZ_x = PRBS_x + 200;
+NRZ_y = PRBS_y;
+addelement("NRZ Pulse Generator");
+set("x position",NRZ_x);
+set("y position",NRZ_y);
+set("amplitude",Vamp);
+
+DC_x = PRBS_x ;
+DC_y = PRBS_y + 150;
+addelement("DC source");
+set("x position",DC_x);
+set("y position",DC_y);
+set("amplitude",Vbias);
+
+Sum_x = DC_x +200;
+Sum_y = DC_y +8 ;
+addelement("Electrical Adder");
+set("x position",Sum_x);
+set("y position",Sum_y);
+
+# This is for debugging
+Osc2_x = Sum_x + 150;
+Osc2_y = Sum_y;
+addelement("Oscilloscope");
+set("x position",Osc2_x);
+set("y position",Osc2_y);
+
+Opt_Osc_x =700;
+Opt_Osc_y =250;
+addelement("Optical Oscilloscope");
+set("x position",Opt_Osc_x);
+set("y position",Opt_Osc_y);
+
+Spec_x =Opt_Osc_x;
+Spec_y =Opt_Osc_y+80;
+addelement("Optical Spectrum Analyzer");
+set("x position",Spec_x);
+set("y position",Spec_y);
+
+
+connect("CWL_1","output","C_1","port 1");
+connect("C_1","port 3","PIN_1","input");
+connect("C_1","port 2","WGD_1","port 2");
+connect("WGD_1","port 1","OM_1","port 2");
+connect("OM_1","port 1","C_1","port 4");
+connect("PIN_1","output","LPF_1","input");
+connect("LPF_1","output","EYE_1","input");
+connect("LPF_1","output","OSC_1","input");
+connect("PRBS_1","output","NRZ_1","modulation");
+connect("NRZ_1","output","EYE_1","reference");
+connect("NRZ_1","output","SUM_1","input 1");
+connect("DC_1","output","SUM_1","input 2");
+connect("SUM_1","output","OSC_2","input");
+connect("SUM_1","output","OM_1","modulation");
+connect("C_1","port 3","OOSC_1","input");
+connect("C_1","port 3","OSA_1","input");
+
+# Saving file first
+filename = "Eye_NRZ_" + num2str(Eye_Data_ID) + ".icp";
+save(filename);
+
+run;
+
+
+result =  getresult("EYE_1","eye diagram");
+
+
+dataname = "Eye_NRZ_"+ num2str(Eye_Data_ID) + '.mat';
+matlabsave(dataname, result);
+
+# switching back to orignal for completeness not sure if needed 
+cd(cwd);
+
+

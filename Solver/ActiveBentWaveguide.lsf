@@ -1,0 +1,139 @@
+switchtolayout;
+select("::model");
+norm_length = 2*pi*Radius + 2*Coupling_Length;
+
+setanalysis('number of trial modes',10);
+setanalysis('search','near n');
+setanalysis('use max index',true);
+setanalysis('calculate group index',true);
+setanalysis("bent waveguide",1);
+setanalysis("bend radius",Radius);
+
+
+
+
+#Import charge density into np object in order to be able to calculate modification to refractive index.
+select("np");
+# Adding Charge profile, need to change directories for this
+#cwd = pwd;
+#charge_dir = cwd + "/Database/Charge";
+#cd(charge_dir);
+
+importdataset(CHARGE_filename);
+#cd(cwd);
+V = linspace(V_start,V_stop,N);
+neff = matrix(length(V));
+ng = matrix(length(V));
+loss = matrix(length(V));
+
+select("FDE");
+set("x span",wg_width + p_width_slab + n_width_slab + pp_width + np_width + ppp_width/2 + npp_width/2);
+
+select("wg");
+set("x span",wg_width);
+
+select("Pad_right");
+set("x",wg_width/2 + n_width_slab + np_width + npp_width/2);  
+set("x span", npp_width);   
+set("y", slab_height/2);
+set("y span", slab_height);
+
+select("Pad_left");
+set("x",-wg_width/2 - p_width_slab - pp_width - ppp_width/2);    
+set("x span", ppp_width); 
+set("y", slab_height/2);
+set("y span", slab_height);
+
+select("Slab_right");
+set("x",wg_width/2 + n_width_slab/2 + np_width/2); 
+set("x span", n_width_slab + np_width); 
+set("y", slab_height/2);
+set("y span", slab_height);
+
+select("Slab_left");
+set("x",-wg_width/2 - p_width_slab/2 - pp_width/2);    
+set("x span", p_width_slab + pp_width); 
+set("y", slab_height/2);
+set("y span", slab_height);
+
+
+
+
+# Executing the sweep first so I have to set the wavelength ranges
+if (Band == 'CL'){
+    setanalysis('wavelength',1.5e-6);
+    setanalysis('stop wavelength',1.6e-6);
+}else{
+    setanalysis('wavelength',1.26e-6);
+    setanalysis('stop wavelength',1.4e-6);
+}
+
+findmodes;
+selectmode(1); 
+setanalysis("track selected mode", true);
+setanalysis("detailed dispersion calculation", true);
+setanalysis("store mode profiles while tracking", true);
+setanalysis("bent waveguide",1);
+setanalysis("bend radius",Radius);
+frequencysweep;
+f=getdata("frequencysweep","f_D");
+dataname = copydcard("frequencysweep");
+filename = "Waveguide_" + Waveguide_ID + ".ldf";
+
+# Saving to database directory 
+cwd = pwd;      
+path = cwd + "/Database/Mode";
+cd(path);
+savedcard(filename, dataname);
+cd(cwd);
+switchtolayout;
+
+if (Band == 'CL'){
+    setanalysis('wavelength',1.55e-6);
+}else{
+    setanalysis('wavelength',1.31e-6);
+}
+
+
+for(i=1; i<=N; i=i+1){
+    if (bias == "Forward"){
+        setnamed('np','V_PType_index',i);
+    }else{
+        setnamed('np','V_NType_index',i);
+    }
+    findmodes;
+    
+   
+
+    neff(i) = getdata('mode1','neff');
+    ng(i) = getdata('mode1','ng');
+    loss(i) = getdata('mode1','loss');    
+
+    
+    switchtolayout;
+}
+dneff = neff - neff(1); # relative change in index wrt. zero bias
+
+L = norm_length;
+la0 = getnamed("MODE","wavelength"); # central wavelength
+rel_phase = 2*pi*real(dneff)/la0*L; # phase change
+
+#Visualize some quantities of interest
+plot(V,real(neff),"Voltage (V)","effective index");
+plot(V,real(ng),"Voltage (V)","group index");
+plot(V,rel_phase,"Voltage (V)","Phase shift wrt. zero bias (rad.)");
+plot(V,loss/100,"Voltage (V)","loss (dB/cm)");
+plot(V,real(dneff),"Voltage (V)","dneff");
+
+# Save to files for import to INTERCONNECT
+
+neff_real = real(neff);
+neff_imag = imag(neff);
+
+dneff_real = real(dneff);
+dneff_imag = imag(dneff);
+
+ng_real = real(ng);
+ng_imag = imag(ng);
+phase = rel_phase;
+

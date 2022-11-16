@@ -1,0 +1,89 @@
+cwd = pwd;
+transmission_directory = cwd + "/Database/Transmission/";
+mode_directory = cwd + "/Database/Mode/";
+
+# Running in transmission database directory
+cd(transmission_directory);
+
+start_freq = c/(start_wavelength);
+stop_freq = c/(stop_wavelength);
+# currently setting up so modulation covers half the ring
+circ = 2*pi*radius + 2*L;
+
+
+
+select("C_1");
+set("input parameter","table");
+set("load from file",1);
+filename_CC = transmission_directory + coupler_file + ".txt";
+set("measurement filename 1",filename_CC);
+set("measurement filename 2",filename_CC);
+
+cd(mode_directory);
+select("WGD_1");
+set("length",circ);
+filename_active = mode_directory + waveguide_file + ".ldf";
+set("loss",propagation_loss); 
+#set("loss",0); 
+set("propagation loss",true); # this is actuall absorption and bend loss
+set("ldf filename",filename_active);
+
+cd(transmission_directory);
+select("OM_1");
+set("length",circ);
+set("load from file",1);
+neff_filename = transmission_directory + waveguide_file + ".txt";
+set("measurement filename",neff_filename);
+
+select("COMPOUND_1::");
+set("radius",radius);
+set("index",1);
+set("VoltageLoss",absorption_loss);
+
+
+try {
+    deletesweep('voltage_sweep');
+}
+addsweep;
+setsweep("sweep", "name", "voltage_sweep");
+setsweep("voltage_sweep", "type", "Ranges");
+setsweep("voltage_sweep", "number of points", N); 
+
+# define the parameter thickness
+para = struct;
+para.Name = "voltage";
+para.Parameter = "::Root Element::DC_1::amplitude";
+para.Type = "Number";
+para.Start = vmin;
+para.Stop = vmax;
+addsweepparameter("voltage_sweep", para);
+
+para2 = struct;
+para2.Name = "index";
+para2.Parameter = "::Root Element::COMPOUND_1::index";
+para2.Start = 1;
+para2.Stop = N;
+addsweepparameter("voltage_sweep", para2);
+
+# define results
+result_1 = struct;
+result_1.Name = "T";
+result_1.Result = "::Root Element::ONA_1::input 1/mode 1/gain";
+
+
+
+# add the results R & T to the sweep
+addsweepresult("voltage_sweep", result_1);
+
+
+# Saving file first
+filename = "transmission_" + num2str(transmission_ID) + ".icp";
+save(filename);
+#Running sweep
+runsweep("voltage_sweep");
+result = getsweepresult("voltage_sweep", "T");
+dataname =  "transmission_" + num2str(transmission_ID) + ".mat";
+matlabsave(dataname, result);
+
+#returning to starting directory
+cd(cwd);

@@ -1,0 +1,438 @@
+switchtolayout;
+deleteall;
+
+
+
+cwd = pwd;
+cd(cwd + "\\database\\charge_AIM");
+
+Waveguide_Height = 0.22e-6;
+if (band == 'CL'){
+    Waveguide_Width = 0.5e-6;
+}else{
+    Waveguide_Width = 0.35e-6;
+}
+
+Pad_Heigth = Waveguide_Height - slab_height;
+
+Sim_Length = 2e-6;
+Cladding_Height = 1e-6;
+Cladding_Width = p_width_core + n_width_core + p_width_slab + n_width_slab + pp_width + np_width + ppp_width + npp_width;
+
+sim_clearance = 50e-9;
+Sim_x = Cladding_Width - 2*sim_clearance;
+Sim_y = 1.6e-6;
+
+circ = 2*pi*radius + 2*coupling_length;
+
+# Adding Charge Solver
+addchargesolver;
+set("solver type","newton");
+set("global iteration limit", 100);
+set("min edge length",0.001e-6);
+set("max edge length",1e-6);
+select("simulation region");
+set("dimension","2D z-normal");
+set("x span",Sim_x);
+set("y span",Sim_y);
+
+# Defining Materials
+addmodelmaterial;
+set("name","Si (Silicon)");
+set("color",[1,0,0]);
+select("materials::Si (Silicon)");
+addmaterialproperties("CT","Si (Silicon)");  # importing from electrical material database
+select("materials::Si (Silicon)");
+addmaterialproperties("HT","Si (Silicon)");  # importing from thermal material database
+
+addmodelmaterial;
+set("name","Al (Aluminium)");
+set("color",[0,1,0]);
+select("materials::Al (Aluminium)");
+addmaterialproperties("CT","Al (Aluminium) - CRC"); # importing from electrical material database
+select("materials::Al (Aluminium)");
+addmaterialproperties("HT","Al (Aluminium) - CRC");  # importing from thermal material database
+
+addmodelmaterial;
+set("name","SiO2 (Glass)");
+select("materials::SiO2 (Glass)");
+addmaterialproperties("CT","SiO2 (Glass) - Sze"); # importing from electrical material database
+select("materials::SiO2 (Glass)");
+addmaterialproperties("HT","SiO2 (Glass) - Sze");  # importing from thermal material database
+
+
+# Defining Material Geometry 
+
+addmesh;
+set("max edge length",0.01e-6);
+set("y",Waveguide_Height/2);
+set("z span", 1e-6);
+
+
+# Slab
+addrect;
+set("name","Left Slab");
+set("material","Si (Silicon)");
+set("x", -Waveguide_Width/2 - p_width_slab/2 - pp_width/2 - ppp_width/2);
+set("y", slab_height/2);
+set("z", 0);
+set("x span", p_width_slab + pp_width + ppp_width);
+set("y span", slab_height);
+set("z span", Sim_Length);
+set("enabled",1);
+
+addrect;
+set("name","Right Slab");
+set("material","Si (Silicon)");
+set("x", Waveguide_Width/2 + n_width_slab/2 +  np_width/2 + npp_width/2);
+set("y", slab_height/2);
+set("z", 0);
+set("x span", n_width_slab + np_width + npp_width);
+set("y span", slab_height);
+set("z span", Sim_Length);
+set("enabled",1);
+
+
+
+
+
+# Waveguide
+addrect;
+set("name","Waveguide");
+set("material","Si (Silicon)");
+set("x", 0);
+set("y", Waveguide_Height/2);
+set("z", 0);
+set("x span", Waveguide_Width);
+set("y span", Waveguide_Height);
+set("z span", Sim_Length);
+
+
+# Buried Oxide
+addrect;
+set("name","Buried Oxide");
+set("material","SiO2 (Glass)");
+set("x", 0);
+set("y", -Cladding_Height/2);
+set("z", 0);
+set("x span", Cladding_Width);
+set("y span", Cladding_Height);
+set("z span", Sim_Length);
+set("mesh order",3);
+
+addrect;
+set("name","source");
+set("x",-Waveguide_Width/2 - p_width_slab - pp_width - ppp_width/2);
+set("y",slab_height + Pad_Heigth/2);
+set("z",0);
+set("x span", npp_width);
+set("y span", Pad_Heigth);
+set("z span",Sim_Length);
+set("material","Al (Aluminium)");
+
+
+addrect;
+set("name","drain");
+set("x",Waveguide_Width/2 + n_width_slab + np_width + npp_width/2);
+set("y",slab_height + Pad_Heigth/2);
+set("z",0);
+set("x span", ppp_width);
+set("y span", Pad_Heigth);
+set("z span",Sim_Length);
+set("material","Al (Aluminium)");
+
+
+# Cladding
+addrect;
+set("name","Surface Oxide");
+set("material","SiO2 (Glass)");
+set("x", 0);
+set("y", Cladding_Height/2);
+set("z", 0);
+set("x span", Cladding_Width);
+set("y span", Cladding_Height);
+set("z span", Sim_Length);
+set("alpha",0.5);
+set("mesh order",3);
+
+
+
+#Adding layout group to organize doping levels
+N1Al = 3e22;
+N2AM = 2.5e23;
+N3Al = 2.5e24;
+N4Al = 2.5e25;
+N5Al = 1.25e26;
+P1Al = 3e22;
+P2Al = 2.5e23;
+P4Al = 2.5e24;
+P5Al = 2.5e25;
+
+
+addgroup;
+set("name","doping");
+
+adddope;
+set("name","n_core");
+set("x",Waveguide_Width/2-n_width_core/2);
+set("y",Waveguide_Height/2);
+set("z",0);
+set("x span",n_width_core);
+set("y span",Waveguide_Height);
+set("z span",1.5e-6);
+set("dopant type","n");
+set("concentration",N1Al);
+addtogroup("doping");
+
+adddope;
+set("name","p_core");
+set("x",-Waveguide_Width/2+p_width_core/2);
+set("y",Waveguide_Height/2);
+set("z",0);
+set("x span",p_width_core);
+set("y span",Waveguide_Height);
+set("z span",1.5e-6);
+set("dopant type","p");
+set("concentration",P1Al);
+addtogroup("doping");
+
+adddope;
+set("name","n_slab");
+set("x",Waveguide_Width/2 + n_width_slab/2);
+set("y",slab_height/2);
+set("z",0);
+set("x span",n_width_slab);
+set("y span",slab_height);
+set("z span",1.5e-6);
+set("dopant type","n");
+set("concentration",N1Al);
+addtogroup("doping");
+
+adddope;
+set("name","p_slab");
+set("x",-Waveguide_Width/2 - p_width_slab/2);
+set("y",slab_height/2);
+set("z",0);
+set("x span",p_width_slab);
+set("y span",slab_height);
+set("z span",1.5e-6);
+set("dopant type","p");
+set("concentration",P1Al);
+addtogroup("doping");
+
+adddope;
+set("name","n+");
+set("x",Waveguide_Width/2 + n_width_slab + np_width/2);
+set("y",slab_height/2);
+set("z",0);
+set("x span",np_width);
+set("y span",slab_height);
+set("z span",1.5e-6);
+set("dopant type","n");
+set("concentration",N3Al);
+addtogroup("doping");
+
+adddope;
+set("name","p+");
+set("x",-Waveguide_Width/2 - p_width_slab - pp_width/2);
+set("y",slab_height/2);
+set("z",0);
+set("x span",pp_width);
+set("y span",slab_height);
+set("z span",1.5e-6);
+set("dopant type","p");
+set("concentration",P4Al);
+addtogroup("doping");
+
+adddope;
+set("name","n++");
+set("x",Waveguide_Width/2 + n_width_slab + np_width + npp_width/2);
+set("y",slab_height/2);
+set("z",0);
+set("x span",npp_width);
+set("y span",slab_height);
+set("z span",1.5e-6);
+set("dopant type","n");
+set("concentration",N5Al);
+addtogroup("doping");
+
+adddope;
+set("name","p++");
+set("x",-Waveguide_Width/2 - p_width_slab - pp_width - ppp_width/2);
+set("y",slab_height/2);
+set("z",0);
+set("x span",ppp_width);
+set("y span",slab_height);
+set("z span",1.5e-6);
+set("dopant type","p");
+set("concentration",P5Al);
+addtogroup("doping");
+
+
+# Adding charge monitor
+addchargemonitor;
+set("name","monitor_charge");
+
+set("monitor type","2D z-normal");
+set("save data",1);
+set("filename",save_name);
+set("integrate total charge",1);
+set("y",Waveguide_Height/2);
+set("x span",Sim_x);
+
+
+
+
+# Adding electrical boundary conditions
+addelectricalcontact;
+set("name","NType");
+set("surface type","solid");
+set("solid","drain");
+
+if (bias == 'Forward'){
+    set("sweep type","single");
+    set("voltage",0);
+}else{
+    set("sweep type","range");
+    set("range start",v_min);
+    set("range num points",N);
+    set("range stop",v_max);
+}
+
+
+addelectricalcontact;
+set("name","PType");
+set("surface type","solid");
+set("solid","source");
+if (bias == 'Forward'){
+    set("sweep type","range");
+    set("range start",v_min);
+    set("range num points",N);
+    set("range stop",v_max);
+}else{
+    set("sweep type","single");
+    set("voltage",0);
+}
+
+# Adding surface recombination
+addsurfacerecombinationbc;
+set("electron velocity",1e5);
+set("hole velocity",1e5);
+set("surface type","material:material");
+set("material 1","Si (Silicon)");
+set("material 2","Al (Aluminium)");
+
+save('ChargeSim.ldev');
+
+try{
+    run;
+} catch(errMsg);
+cd(cwd);
+
+## Now doing the SSAC signal for resistance, capacitance and BW
+switchtolayout;
+norm_length = circ;
+
+select("CHARGE");
+set("solver mode",'ssac');
+set("frequency spacing","log");
+set("log start frequency",1e6);
+set("log stop frequency",1e10);
+set("num frequency points per dec",2);
+set("norm length",norm_length);
+
+# Dont Save Charge This Time Since It Is In SSAC mode
+setnamed('CHARGE::monitor_charge','save data',0);
+if (bias == 'Reverse'){
+    setnamed("CHARGE::boundary conditions::NType","apply ac small signal","all");
+}else{
+    setnamed("CHARGE::boundary conditions::PType","apply ac small signal","all");
+}
+
+
+run('CHARGE');
+
+# Calculate R and C using impedance
+
+if (bias == 'Reverse'){
+    Result = getresult('CHARGE','ac_NType');
+}else{
+    Result = getresult('CHARGE','ac_PType');
+}
+
+
+V = 0.001;
+I = pinch(Result.dI);
+if (bias == 'Reverse'){
+    Vc = Result.V_NType;
+}else{
+    Vc = Result.V_PType;
+}
+
+f = Result.f;
+Nf = length(f);
+Z = V/I;
+
+
+# C
+Y = 1/Z;
+C_ac = matrix(N,Nf);
+for (i=1:N) {
+C_ac(i,1:Nf) = imag(Y(i,1:Nf))/(2*pi*f);
+}
+
+
+
+# save all resistivities
+#Vr = Vc(2:end);
+R = real(Z(1:end,1:end));
+Resistivities = [pinch(R,2,1),pinch(R,2,2),
+               pinch(R,2,3),pinch(R,2,4),
+               pinch(R,2,5),pinch(R,2,6),
+               pinch(R,2,7),pinch(R,2,8),
+               pinch(R,2,9)];
+
+# Plot average resistance
+res_avg = matrix(1,N);
+for (i=1:N)
+{
+    res_avg(1,i) = mean(R(i,2:end));
+}
+       
+# save all capacitance per unit length
+Capacitances = [pinch(C_ac,2,1)/norm_length,pinch(C_ac,2,2)/norm_length,
+                pinch(C_ac,2,3)/norm_length,pinch(C_ac,2,4)/norm_length,
+                pinch(C_ac,2,5)/norm_length,pinch(C_ac,2,6)/norm_length,
+                pinch(C_ac,2,7)/norm_length,pinch(C_ac,2,8)/norm_length,
+                pinch(C_ac,2,9)/norm_length];
+
+       
+# Plot average capacitance
+cap_avg = matrix(1,N);
+for (i=1:N)
+{
+    cap_avg(1,i) = mean(C_ac(i,1:end))/norm_length;
+}
+       
+# Calculate PN Junction RC Bandwidth
+C = C_ac(1:end, 1:end);
+#BW = 1/(2*pi*R*C);
+
+#Bandwidths = [pinch(BW,2,1),pinch(BW,2,2),
+#              pinch(BW,2,3),pinch(BW,2,4),
+#              pinch(BW,2,5),pinch(BW,2,6),
+#              pinch(BW,2,7),pinch(BW,2,8),
+#              pinch(BW,2,9)];
+
+       
+# Plot average bandwidth
+#bw_avg = matrix(1,N);
+#for (i=1:N)
+#{
+#    bw_avg(1,i) = mean(BW(i,2:end))*1e-9;
+#}
+bw_avg = 1/(2*pi*res_avg*cap_avg);
+
+
+# the following values are exported via lumAPI
+# res_avg, cap_avg, bw_avg
