@@ -261,15 +261,17 @@ main_tab = [
     [sg.Radio('Define CHARGE',
               "RADIO2",
               default=False,
+              enable_events=True,
               key='-DEFINE_CHARGE-'),
      sg.Radio('Import CHARGE',
               "RADIO2",
               default=True,
+              enable_events=True,
               key='-IMPORT_CHARGE-'),
      sg.Text('Filename:'),
      sg.Input(key='-CHARGE_FILE-',
               s=(box_size, 1)),
-     sg.FileBrowse(),
+     sg.FileBrowse(key='-BROWSE-'),
      sg.Text('Warning Message: ',
              size=(warning_size, 1),
              text_color='yellow',
@@ -597,6 +599,7 @@ run_sim = window['-RUN-']
 charge_window = window['-CHARGE_TAB-']
 results_window = window['-RESULTS_TAB-']
 charge_file = window['-CHARGE_FILE-']
+browse_button = window['-BROWSE-']
 run_charge = window['-RUN_CHARGE-']
 propagation_loss_box = window['-PROP_LOSS-']
 propagation_loss_warning = window['-PROP_LOSS_WARNING-']
@@ -869,53 +872,58 @@ while True:
             print(e)
 
     elif event == '-RUN-':
-        # This event runs the simulation depending on the supplied settings
-        print("Running Simulation")
-        print("Current Physical Parameters: R=" + str(Radius) +
-              "[um]_G=" + str(Gap) + "[nm]_Slab=" + str(slab_height) +
-              "[nm]_L=" + str(CouplingLength) + "[um]")
+        try:
 
-        # Converting to SI units for saving
-        Radius_SI = round(Radius*1e-6, 10)
-        slab_height_SI = round(slab_height*1e-9, 10)
-        CouplingLength_SI = round(CouplingLength*1e-6, 10)
+            # This event runs the simulation depending on the supplied settings
+            print("Running Simulation")
+            print("Current Physical Parameters: R=" + str(Radius) +
+                  "[um]_G=" + str(Gap) + "[nm]_Slab=" + str(slab_height) +
+                  "[nm]_L=" + str(CouplingLength) + "[um]")
 
-        # Gap is unique since it can be swept for critical coupling
-        if bool_critical_couple == 1:
-            Gap_SI = np.linspace(100e-9, 600e-9, 11)
+            # Converting to SI units for saving
+            Radius_SI = round(Radius*1e-6, 10)
+            slab_height_SI = round(slab_height*1e-9, 10)
+            CouplingLength_SI = round(CouplingLength*1e-6, 10)
 
-            # This executes the critical coupling sweep
-            saved_results = sim.CriticalCouplingAutomation(
-                Radius_SI, Gap_SI, slab_height_SI,
-                CouplingLength_SI, LambdaStart, LambdaEnd,
-                band, CHARGE_file, prop_loss)
+            # Gap is unique since it can be swept for critical coupling
+            if bool_critical_couple == 1:
+                Gap_SI = np.linspace(100e-9, 600e-9, 11)
 
-            gap_box.update(str(round(saved_results.CriticalCoupleGap/1e-9)))
-        else:
-            Gap_SI = round(Gap*1e-9, 10)
+                # This executes the critical coupling sweep
+                saved_results = sim.CriticalCouplingAutomation(
+                    Radius_SI, Gap_SI, slab_height_SI,
+                    CouplingLength_SI, LambdaStart, LambdaEnd,
+                    band, CHARGE_file, prop_loss)
 
-            # This executes a single iteration of the script
-            saved_results = sim.runSimulation(
-                Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                LambdaStart, LambdaEnd, band, CHARGE_file, prop_loss)
+                gap_box.update(str(round(saved_results.CriticalCoupleGap/1e-9)))
+            else:
+                Gap_SI = round(Gap*1e-9, 10)
 
-        # Extracting results from saved_results class
-        CC = saved_results.CC
-        CC_f = saved_results.f
-        dNeff = saved_results.dNeff
-        T = saved_results.T
-        wavelength = saved_results.wavelength
-        wavelength = wavelength*1e9
-        phase_shift = saved_results.phase_shift
-        capacitance = saved_results.capacitance
-        resistance = saved_results.resistance
-        bandwidth = saved_results.bandwidth
-        voltage = phase_shift[0]
+                # This executes a single iteration of the script
+                saved_results = sim.runSimulation(
+                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                    LambdaStart, LambdaEnd, band, CHARGE_file, prop_loss)
 
-        # Now that the data has been simulated we will plot it in the results tab.
-        # Enabling result display buttons
-        results_window.Update(visible=True)
-        enable_result_buttons()
+            # Extracting results from saved_results class
+            CC = saved_results.CC
+            CC_f = saved_results.f
+            dNeff = saved_results.dNeff
+            T = saved_results.T
+            wavelength = saved_results.wavelength
+            wavelength = wavelength*1e9
+            phase_shift = saved_results.phase_shift
+            capacitance = saved_results.capacitance
+            resistance = saved_results.resistance
+            bandwidth = saved_results.bandwidth
+            voltage = phase_shift[0]
+
+            # Now that the data has been simulated we will plot it in the results tab.
+            # Enabling result display buttons
+            results_window.Update(visible=True)
+            enable_result_buttons()
+
+        except Exception as e:
+            print("The following error has occured: " + e)
 
     elif event == '-CC-':
         # This event handles plotting the coupling coefficient i.e the power coupling coefficient
@@ -1470,6 +1478,13 @@ while True:
             draw.CreateWaveguideDopantLabels_AIM(graph_charge)
             p_width_core_text.update('P1Al Width (Core)')
             p_width_slab_text.update('P1Al Width (Slab)')
+
+    elif event == '-DEFINE_CHARGE-':
+        charge_file.Update('')
+        browse_button.Update(visible=False)
+        bool_charge = 0
+    elif event == '-IMPORT_CHARGE-':
+        browse_button.Update(visible=True)
 
     # This is the boolean checker that determines if the entire simulation set up has been completed
     if (bool_radius == 1 and bool_gap == 1 and bool_coupling_length == 1

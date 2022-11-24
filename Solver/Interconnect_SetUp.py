@@ -292,7 +292,7 @@ def PAM4_Voltage(simulation_setup, saved_results, charge_setup):
 
     # Populating simulation class settings
     SNLC = simulation_setup.staticNonLinCorrec
-    laser = simulation_setup.laser_wavl*1e-9
+    laser = simulation_setup.laser_wavl
 
     # Extracting results from saved results class
     T = saved_results.T
@@ -313,7 +313,7 @@ def PAM4_Voltage(simulation_setup, saved_results, charge_setup):
             shift_curve.append(T[ii, indx])
 
         # Interpolating to high res
-        f = interp1d(voltage, shift_curve, kind='cubic')
+        f = interp1d(voltage, shift_curve, kind='linear')
         voltage_interp = np.linspace(voltage[0], voltage[-1], num=10000, endpoint=True)
         shift_curve_interp = f(voltage_interp)
 
@@ -327,21 +327,21 @@ def PAM4_Voltage(simulation_setup, saved_results, charge_setup):
 
         max_shift = max(shift_curve_trunc)
         min_shift = min(shift_curve_trunc)
-# =============================================================================
-#         max_index = shift_curve_trunc.index(max_shift)
-#         min_index = shift_curve_trunc.index(min_shift)
-#
-#         # Determining voltage levels for equidistant transmission
-#         shift_range = max_shift - min_shift
-# =============================================================================
+
+        max_index = shift_curve_trunc.index(max_shift)
+        min_index = shift_curve_trunc.index(min_shift)
+
+        region_of_interest = shift_curve_trunc[min_index:max_index]
+        droped_indices = min_index-1
+
         shift_levels = np.linspace(min_shift, max_shift, 4)
 
         # Finding voltage levels
         voltage_levels = []
         for ii in range(len(shift_levels)):
-            indx = min(range(len(shift_curve_trunc)), key=lambda j: abs(
-                shift_curve_trunc[j]-shift_levels[ii]))
-            voltage_levels.append(round(voltage_trunc[indx], 3))
+            indx = min(range(len(region_of_interest)), key=lambda j: abs(
+                region_of_interest[j]-shift_levels[ii]))
+            voltage_levels.append(round(voltage_trunc[droped_indices+indx], 3))
 
         V0 = voltage_levels[0]
         V1 = voltage_levels[1]
@@ -353,7 +353,7 @@ def PAM4_Voltage(simulation_setup, saved_results, charge_setup):
 # =============================================================================
 
 # =============================================================================
-#         plt.plot(voltage, shift_curve, label='Transmission @ Laser Wavelength')
+#         plt.plot(voltage_interp, shift_curve_interp, label='Transmission @ Laser Wavelength')
 #         plt.xlim([min(voltage), max(voltage)])
 #         #plt.ylim([-27.5, 0])
 #         plt.axvline(x=eye_vmin, color='r', label='Min.Request Eye Voltage')
@@ -379,13 +379,11 @@ def PAM4_Voltage(simulation_setup, saved_results, charge_setup):
 #
 #
 #         plt.figure()
-#         laser_nm = laser/1e-6
-#         wavelength_nm=wavelength/1e-6
 #         for ii in range(len(T)):
-#             plt.plot(wavelength_nm, T[ii, :], label='_nolegend_')
-#         plt.axvline(x=laser_nm, color='r', label='Laser Wavelength')
-#         xrange = 0.00025
-#         plt.xlim([laser_nm-xrange/2, laser_nm+xrange/2])
+#             plt.plot(wavelength, T[ii, :], label='_nolegend_')
+#         plt.axvline(x=laser, color='r', label='Laser Wavelength')
+#         xrange = 0.25
+#         plt.xlim([laser-xrange/2, laser+xrange/2])
 #         plt.ylim([-40, 0])
 #         plt.xticks(fontsize=14)
 #         plt.yticks(fontsize=14)

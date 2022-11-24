@@ -542,9 +542,9 @@ def runEye(Eye_type, Vmax, Vmin, Laser_Wavl, Radius, CouplingLength, LambdaStart
     simulation_setup.propagation_loss = prop_loss
 
     # Populating CHARGE settings
-    charge_setup.vmin = charge_query[0][12]
-    charge_setup.vmax = charge_query[0][13]
-    charge_setup.charge_datapoints = charge_query[0][14]
+    charge_setup.vmin = charge_query[0][14]
+    charge_setup.vmax = charge_query[0][15]
+    charge_setup.charge_datapoints = charge_query[0][16]
 
     # Determining voltage levels depending on eye type
     if Eye_type == 'PAM4':

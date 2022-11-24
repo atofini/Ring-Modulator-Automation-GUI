@@ -47,17 +47,40 @@ def CheckRadius(x0, y0, values, graph, radius_text, radius_warning):
         if values['-RADIUS-'] != '':
             # Populating radius
             Radius = float(values['-RADIUS-'])
-            print("Saving Radius as:" + str(Radius))
 
-            # Removing previous radius measurement and making a new one
-            graph.delete_figure(radius_text)
-            radius_text = graph.DrawText(
-                str(Radius)+' [um]', (x0+120, y0+25), color="blue",
-                font=None, angle=0, text_location="center")
+            if Radius < 5.0:
 
-            # Setting boolean tracker to 1 and removing any warnings
-            bool_radius = 1
-            radius_warning.Update('Warning Message: ', visible=False)
+                # Updating measurement label to be unknown
+                graph.delete_figure(radius_text)
+                radius_text = graph.DrawText('?? [um]', (x0+120, y0+25),
+                                             color="blue", font=None, angle=0,
+                                             text_location="center")
+
+                # Setting boolean tracker to 1 and removing any warnings
+                bool_radius = 0
+                radius_warning.Update('Warning Message: Radius must be > 5 um', visible=True)
+            elif Radius > 100:
+                # Updating measurement label to be unknown
+                graph.delete_figure(radius_text)
+                radius_text = graph.DrawText('?? [um]', (x0+120, y0+25),
+                                             color="blue", font=None, angle=0,
+                                             text_location="center")
+
+                # Setting boolean tracker to 1 and removing any warnings
+                bool_radius = 0
+                radius_warning.Update('Warning Message: Radius must be <= 100 um', visible=True)
+            else:
+                print("Saving Radius as:" + str(Radius))
+
+                # Removing previous radius measurement and making a new one
+                graph.delete_figure(radius_text)
+                radius_text = graph.DrawText(
+                    str(Radius)+' [um]', (x0+120, y0+25), color="blue",
+                    font=None, angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing any warnings
+                bool_radius = 1
+                radius_warning.Update('Warning Message: ', visible=False)
         else:
             # Setting boolean tracker to 0 and adding warning that radius is not specified
             bool_radius = 0
@@ -133,17 +156,39 @@ def CheckGap(x0, y0, values, graph, gap_text, gap_warning, drawing_radius, drawi
             if values['-GAP-'] != '':
                 # Populating gap
                 Gap = float(values['-GAP-'])
-                print("Saving Gap as:" + str(Gap))
+                if Gap <= 0:
 
-                # Removing previous gap measurement and making a new one
-                graph.delete_figure(gap_text)
-                gap_text = graph.DrawText(str(
-                    Gap)+' [nm]', (x0+75, y0-drawing_radius-drawing_gap/2), color="blue",
-                    font=None, angle=0, text_location="center")
+                    # Updating measurement label to be unknown
+                    graph.delete_figure(gap_text)
+                    gap_text = graph.DrawText('?? [nm]', (x0+75, y0-drawing_radius-drawing_gap/2),
+                                              color="blue", font=None, angle=0,
+                                              text_location="center")
 
-                # Setting the boolean tracker to 1 and removing any warnings
-                bool_gap = 1
-                gap_warning.Update('Warning Message: ', visible=False)
+                    # Setting the boolean tracker to 1 and removing any warnings
+                    bool_gap = 0
+                    gap_warning.Update('Warning Message: Gap must be > 0 nm', visible=True)
+                elif Gap > 1000:
+                    # Updating measurement label to be unknown
+                    graph.delete_figure(gap_text)
+                    gap_text = graph.DrawText('?? [nm]', (x0+75, y0-drawing_radius-drawing_gap/2),
+                                              color="blue", font=None, angle=0,
+                                              text_location="center")
+
+                    # Setting the boolean tracker to 1 and removing any warnings
+                    bool_gap = 0
+                    gap_warning.Update('Warning Message: Gap must be <= 1000 nm', visible=True)
+                else:
+                    print("Saving Gap as:" + str(Gap))
+
+                    # Removing previous gap measurement and making a new one
+                    graph.delete_figure(gap_text)
+                    gap_text = graph.DrawText(str(
+                        Gap)+' [nm]', (x0+75, y0-drawing_radius-drawing_gap/2), color="blue",
+                        font=None, angle=0, text_location="center")
+
+                    # Setting the boolean tracker to 1 and removing any warnings
+                    bool_gap = 1
+                    gap_warning.Update('Warning Message: ', visible=False)
             else:
                 # Setting boolean tracker to 0 and adding warning that gap is not specified
                 bool_gap = 0
@@ -197,21 +242,32 @@ def CheckSlab(x0, y0, values, graph, slab_warning):
         if values['-SLAB-'] != '':
             # Populating slab height
             slab_height = float(values['-SLAB-'])
-            print("Saving slab_height as:" + str(slab_height))
 
-            # Setting the boolean tracker to 1 and removing any warnings
-            bool_slab = 1
-            slab_warning.Update('Warning Message: ', visible=False)
+            if slab_height <= 0:
+                # Boolean tracker set to 0 and add warning for invalid slab height
+                bool_slab = 0
+                slab_warning.Update('Warning Message: Slab Height must be > 0 nm', visible=True)
+            elif slab_height > 110:
+                # Boolean tracker set to 0 and add warning for invalid slab height
+                bool_slab = 0
+                slab_warning.Update('Warning Message: Slab Height must be <= 110 nm', visible=True)
+
+            else:
+                print("Saving slab_height as:" + str(slab_height))
+                # Setting the boolean tracker to 1 and removing any warnings
+                bool_slab = 1
+                slab_warning.Update('Warning Message: ', visible=False)
+
         else:
             # Setting boolean tracker to 0 and adding warning that slab height is not specified
             bool_slab = 0
-            slab_warning.Update('Warning Message: slab_height Not Specified', visible=True)
+            slab_warning.Update('Warning Message: Slab Height Not Specified', visible=True)
 
     # If convertion to float fails, instruct user to fix error
     except ValueError:
         # Boolean tracker set to 0 and add warning for invalid slab height
         bool_slab = 0
-        slab_warning.Update('Warning Message: Invalid slab_height', visible=True)
+        slab_warning.Update('Warning Message: Invalid Slab Height', visible=True)
 
     return bool_slab, slab_height
 
@@ -338,7 +394,8 @@ def CheckCouplingLength(x0, y0, values, graph, coupling_length_text, coupling_le
     # Attempt to convert value inside coupling length textbox to float
     try:
         # Checking if slab heighth box is not empty and greater than 0
-        if values['-COUPLING_LENGTH-'] != '' and float(values['-COUPLING_LENGTH-']) > 0:
+        if (values['-COUPLING_LENGTH-'] != '' and float(values['-COUPLING_LENGTH-']) > 0
+                and float(values['-COUPLING_LENGTH-']) <= 100):
             # Populating coupling length
             CouplingLength = float(values['-COUPLING_LENGTH-'])
             print("Saving Coupling Length as:" + str(CouplingLength))
@@ -388,6 +445,28 @@ def CheckCouplingLength(x0, y0, values, graph, coupling_length_text, coupling_le
             radius_line = graph.DrawLine(
                 (x0+coupling_region/2, y0), (x0+drawing_radius+coupling_region/2, y0),
                 color="blue", width=5)
+        elif (values['-COUPLING_LENGTH-'] != '' and float(values['-COUPLING_LENGTH-']) > 100):
+            # Boolean tracker set to 0 and add warning for invalid coupling length
+            bool_coupling_length = 0
+            coupling_length_warning.Update(
+                'Warning Message: Coupling Length Must Be <=100 um', visible=True)
+
+            # Drawing the circular ring
+            circle = graph.DrawCircle((x0, y0), drawing_radius, fill_color='',
+                                      line_color='black', line_width=bus_width/2*1.25)
+
+            # Redrawing the radius measurement to match the point coupler
+            if bool_radius == 0:
+                radius_text = graph.DrawText(
+                    '?? [um]', (x0+120, y0+25), color="blue",
+                    font=None, angle=0, text_location="center")
+            else:
+                radius_text = graph.DrawText(
+                    str(Radius)+' [um]', (x0+120, y0+25), color="blue",
+                    font=None, angle=0, text_location="center")
+
+            # Redrawing radius measurement line in case previous one was for a racetrack ring
+            radius_line = graph.DrawLine((x0, y0), (x0+drawing_radius, y0), color="blue", width=5)
 
         # If coupling length is zero, treat ring as a point coupler not a racetrack
         else:
@@ -528,11 +607,17 @@ def CheckPropLoss(values, prop_loss_warning):
         if values['-PROP_LOSS-'] != '':
             # Populating propgation loss
             prop_loss = float(values['-PROP_LOSS-'])*100  # converting to db/m instead of db/cm
-            print("Saving Propagation loss as:" + str(prop_loss))
+            if prop_loss < 0:
+                # Boolean tracker set to 0 here also and invalid propagation loss warning added
+                bool_prop_loss = 0
+                prop_loss_warning.Update(
+                    'Warning Message: Propagation Loss must be >=0', visible=True)
+            else:
+                print("Saving Propagation loss as:" + str(prop_loss))
 
-            # Setting boolean tracker to 1 and removing any warnings
-            bool_prop_loss = 1
-            prop_loss_warning.Update('Warning Message: ', visible=False)
+                # Setting boolean tracker to 1 and removing any warnings
+                bool_prop_loss = 1
+                prop_loss_warning.Update('Warning Message: ', visible=False)
         else:
             # Setting boolean tracker to 0 and adding warning that propagation loss is not specified
             bool_prop_loss = 0
@@ -541,7 +626,7 @@ def CheckPropLoss(values, prop_loss_warning):
 
     # If convertion to float fails, instruct user to fix error
     except ValueError:
-        # Boolean tracker set to 0 here also and invalide propagation loss warning added
+        # Boolean tracker set to 0 here also and invalid propagation loss warning added
         bool_prop_loss = 0
         prop_loss_warning.Update('Warning Message: Invalid Propagation Loss', visible=True)
 
@@ -675,16 +760,37 @@ def CheckChargeParameters(values, graph_charge,
         if values['-P_WIDTH_CORE-'] != '':
             # Populating P width (core)
             p_width_core = float(values['-P_WIDTH_CORE-'])
-            print("Saving P Width (Core) as: " + str(p_width_core))
+            if p_width_core < 0:
+                # Updating measurement label description to be unknown
+                graph_charge.DrawText('?? [nm]', (87.5, 650),
+                                      color="blue", font=None,
+                                      angle=0, text_location="center")
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(p_width_core) + ' [nm]', (87.5, 650),
-                                                      color="blue", font=None,
-                                                      angle=0, text_location="center")
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_PWidth_core = 0
+                if values['-AMF-']:
+                    p_width_core_warning.Update(
+                        'Warning Message: P Width (Core) must be >=0 ', visible=True)
+                elif values['-AIM-']:
+                    if values['-LATERAL-']:
+                        p_width_core_warning.Update(
+                            'Warning Message: P1Al Width (Core) must be >=0 ', visible=True)
+                    elif values['-L_SHAPED-']:
+                        p_width_core_warning.Update(
+                            'Warning Message: P2Al Width (Core) must be >=0', visible=True)
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_PWidth_core = 1
-            p_width_core_warning.Update('Warning Message: ', visible=False)
+            else:
+                print("Saving P Width (Core) as: " + str(p_width_core))
+
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(p_width_core) + ' [nm]', (87.5, 650),
+                                                          color="blue", font=None,
+                                                          angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_PWidth_core = 1
+                p_width_core_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label description to be unknown
             graph_charge.DrawText('?? [nm]', (87.5, 650),
@@ -728,15 +834,31 @@ def CheckChargeParameters(values, graph_charge,
         if values['-N_WIDTH_CORE-'] != '':
             # Populating N width (core)
             n_width_core = float(values['-N_WIDTH_CORE-'])
-            print("Saving N Width (Core) as: " + str(n_width_core))
+            if n_width_core < 0:
+                # Updating measurement label description to be unknown
+                graph_charge.DrawText('?? [nm]', (112.5, 650), color="blue",
+                                      font=None, angle=0, text_location="center")
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(n_width_core) + ' [nm]', (112.5, 650), color="blue",
-                                  font=None, angle=0, text_location="center")
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_NWidth_core = 0
+                if values['-AMF-']:
+                    n_width_core_warning.Update(
+                        'Warning Message: N Width (Core) must be >=0', visible=True)
+                elif values['-AIM-']:
+                    n_width_core_warning.Update(
+                        'Warning Message: N1Al Width (Core) must be >=0 ', visible=True)
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_NWidth_core = 1
-            n_width_core_warning.Update('Warning Message: ', visible=False)
+            else:
+                print("Saving N Width (Core) as: " + str(n_width_core))
+
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(n_width_core) + ' [nm]', (112.5, 650), color="blue",
+                                      font=None, angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_NWidth_core = 1
+                n_width_core_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label description to be unknown
             graph_charge.DrawText('?? [nm]', (112.5, 650), color="blue",
@@ -770,15 +892,36 @@ def CheckChargeParameters(values, graph_charge,
         if values['-P_WIDTH_SLAB-'] != '':
             # Populating P width (slab)
             p_width_slab = float(values['-P_WIDTH_SLAB-'])
-            print("Saving P Width (Slab) as: " + str(p_width_slab))
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(p_width_slab) + ' [nm]', (62.5, 400), color="blue", font=None,
-                                                      angle=0, text_location="center")
+            if p_width_slab < 0:
+                # Updating measurement label to be unknown
+                graph_charge.DrawText('?? [nm]', (62.5, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_PWidth_slab = 1
-            p_width_slab_warning.Update('Warning Message: ', visible=False)
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_PWidth_slab = 0
+                if values['-AMF-']:
+                    p_width_slab_warning.Update(
+                        'Warning Message: P Width (Slab) must be >=0 ', visible=True)
+                elif values['-AIM-']:
+                    if values['-LATERAL-']:
+                        p_width_slab_warning.Update(
+                            'Warning Message: P1Al Width (Slab) must be >=0 ', visible=True)
+                    elif values['-L_SHAPED-']:
+                        p_width_slab_warning.Update(
+                            'Warning Message: P1Al+P2Al Width (Slab) must be >=0', visible=True)
+            else:
+                print("Saving P Width (Slab) as: " + str(p_width_slab))
+
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(p_width_slab) + ' [nm]', (62.5, 400),
+                                      color="blue", font=None,
+                                      angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_PWidth_slab = 1
+                p_width_slab_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label to be unknown
             graph_charge.DrawText('?? [nm]', (62.5, 400), color="blue", font=None,
@@ -821,16 +964,31 @@ def CheckChargeParameters(values, graph_charge,
         if values['-N_WIDTH_SLAB-'] != '':
             # Populating N width (slab)
             n_width_slab = float(values['-N_WIDTH_SLAB-'])
-            print("Saving N Width (Slab) as: " + str(n_width_slab))
+            if n_width_slab < 0:
+                # Updating measurement label to be unknown
+                graph_charge.DrawText('?? [nm]', (137.5, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(n_width_slab) + ' [nm]', (137.5, 400),
-                                                      color="blue", font=None,
-                                                      angle=0, text_location="center")
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_NWidth_slab = 0
+                if values['-AMF-']:
+                    n_width_slab_warning.Update(
+                        'Warning Message: N Width (Slab) must be >=0 ', visible=True)
+                elif values['-AIM-']:
+                    n_width_slab_warning.Update(
+                        'Warning Message: N1Al Width (Slab) must be >=0 ', visible=True)
+            else:
+                print("Saving N Width (Slab) as: " + str(n_width_slab))
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_NWidth_slab = 1
-            n_width_slab_warning.Update('Warning Message: ', visible=False)
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(n_width_slab) + ' [nm]', (137.5, 400),
+                                                          color="blue", font=None,
+                                                          angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_NWidth_slab = 1
+                n_width_slab_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label to be unknown
             graph_charge.DrawText('?? [nm]', (137.5, 400), color="blue", font=None,
@@ -864,15 +1022,30 @@ def CheckChargeParameters(values, graph_charge,
         if values['-P+_WIDTH-'] != '':
             # Populating P+ width
             pp_width = float(values['-P+_WIDTH-'])
-            print("Saving P Width as: " + str(pp_width))
+            if pp_width < 0:
+                # Updating measurement label to be unknown
+                graph_charge.DrawText('?? [nm]', (37.5, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(pp_width) + ' [nm]', (37.5, 400), color="blue", font=None,
-                                                  angle=0, text_location="center")
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_PPWidth = 0
+                if values['-AMF-']:
+                    pp_width_warning.Update(
+                        'Warning Message: P+ Width must be >=0 ', visible=True)
+                elif values['-AIM-']:
+                    pp_width_warning.Update(
+                        'Warning Message: P4Al Width must be >=0 ', visible=True)
+            else:
+                print("Saving P Width as: " + str(pp_width))
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_PPWidth = 1
-            pp_width_warning.Update('Warning Message: ', visible=False)
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(pp_width) + ' [nm]', (37.5, 400), color="blue", font=None,
+                                                      angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_PPWidth = 1
+                pp_width_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label to be unknown
             graph_charge.DrawText('?? [nm]', (37.5, 400), color="blue", font=None,
@@ -904,15 +1077,31 @@ def CheckChargeParameters(values, graph_charge,
         if values['-N+_WIDTH-'] != '':
             # Populating N+ width
             np_width = float(values['-N+_WIDTH-'])
-            print("Saving P Width as: " + str(np_width))
+            if np_width < 0:
+                # Updating measurement label to be unknown
+                graph_charge.DrawText('?? [nm]', (162.5, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(np_width) + ' [nm]', (162.5, 400), color="blue", font=None,
-                                  angle=0, text_location="center")
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_NPWidth = 0
+                if values['-AMF-']:
+                    np_width_warning.Update(
+                        'Warning Message: N+ Width must be >=0', visible=True)
+                elif values['-AIM-']:
+                    np_width_warning.Update(
+                        'Warning Message: N3Al Width must be >=0 ', visible=True)
+            else:
+                print("Saving P Width as: " + str(np_width))
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_NPWidth = 1
-            np_width_warning.Update('Warning Message: ', visible=False)
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(np_width) + ' [nm]', (162.5, 400),
+                                      color="blue", font=None,
+                                      angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_NPWidth = 1
+                np_width_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label to be unknown
             graph_charge.DrawText('?? [nm]', (162.5, 400), color="blue", font=None,
@@ -944,15 +1133,30 @@ def CheckChargeParameters(values, graph_charge,
         if values['-P++_WIDTH-'] != '':
             # Populating P++ width
             ppp_width = float(values['-P++_WIDTH-'])
-            print("Saving P Width as: " + str(ppp_width))
+            if ppp_width < 0:
+                # Updating measurement label to be unknown
+                graph_charge.DrawText('?? [nm]', (12, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(ppp_width) + ' [nm]', (12, 400), color="blue", font=None,
-                                  angle=0, text_location="center")
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_PPPWidth = 0
+                if values['-AMF-']:
+                    ppp_width_warning.Update(
+                        'Warning Message: P++ Width must be >=0', visible=True)
+                elif values['-AIM-']:
+                    ppp_width_warning.Update(
+                        'Warning Message: P5Al Width must be >=0 ', visible=True)
+            else:
+                print("Saving P Width as: " + str(ppp_width))
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_PPPWidth = 1
-            ppp_width_warning.Update('Warning Message: ', visible=False)
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(ppp_width) + ' [nm]', (12, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_PPPWidth = 1
+                ppp_width_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label to be unknown
             graph_charge.DrawText('?? [nm]', (12, 400), color="blue", font=None,
@@ -984,15 +1188,30 @@ def CheckChargeParameters(values, graph_charge,
         if values['-N++_WIDTH-'] != '':
             # Populating N++ width
             npp_width = float(values['-N++_WIDTH-'])
-            print("Saving P Width as: " + str(npp_width))
+            if npp_width < 0:
+                # Updating measurement label to be unknown
+                graph_charge.DrawText('?? [nm]', (187, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
 
-            # Updating measurement label description to specified value
-            graph_charge.DrawText(str(npp_width) + ' [nm]', (187, 400), color="blue", font=None,
-                                  angle=0, text_location="center")
+                # Setting boolean tracker to 0 and add warning message depending on foundry
+                # and PN type
+                bool_NPPWidth = 0
+                if values['-AMF-']:
+                    npp_width_warning.Update(
+                        'Warning Message: N++ Width must be >=0 ', visible=True)
+                elif values['-AIM-']:
+                    npp_width_warning.Update(
+                        'Warning Message: N5Al Width must be >=0 ', visible=True)
+            else:
+                print("Saving P Width as: " + str(npp_width))
 
-            # Setting boolean tracker to 1 and removing warning labels
-            bool_NPPWidth = 1
-            npp_width_warning.Update('Warning Message: ', visible=False)
+                # Updating measurement label description to specified value
+                graph_charge.DrawText(str(npp_width) + ' [nm]', (187, 400), color="blue", font=None,
+                                      angle=0, text_location="center")
+
+                # Setting boolean tracker to 1 and removing warning labels
+                bool_NPPWidth = 1
+                npp_width_warning.Update('Warning Message: ', visible=False)
         else:
             # Updating measurement label to be unknown
             graph_charge.DrawText('?? [nm]', (187, 400), color="blue", font=None,
@@ -1216,8 +1435,8 @@ def check_secondary_inputs(values, CHARGE_file, laser_warning,
     charge_file = str(CHARGE_file).split('\\')[-1]
     charge_file = charge_file.split('.')[0]
     charge_query = database.QueryChargeFile(charge_file, foundry)
-    charge_vmin = charge_query[0][12]
-    charge_vmax = charge_query[0][13]
+    charge_vmin = charge_query[0][14]
+    charge_vmax = charge_query[0][15]
 
     # Poplating simulation wavelength range for laser crossreference
     # Keeping unit sthe same as the user inputs for the eye diagram window
