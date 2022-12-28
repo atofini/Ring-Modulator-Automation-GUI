@@ -31,6 +31,8 @@ set("x span",wg_width + p_width_slab + n_width_slab + pp_width + np_width + ppp_
 
 select("wg");
 set("x span",wg_width);
+set("y span", wg_height);
+set("y", wg_height/2);
 
 select("Pad_right");
 set("x",wg_width/2 + n_width_slab + np_width + npp_width/2);  

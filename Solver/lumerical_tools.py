@@ -105,7 +105,7 @@ def run_FDTD(parameters, simulation_setup, close=True, **kwargs):
     lumapi.evalScript(fdtd, ("setnamed('::model','wg_width',%s); "
                              "setnamed('::model','wg_height',%s); "
                              "setnamed('::model','slab_height',%s);")
-                      % (parameters.wg_width, parameters.thick_Si, parameters.slab_height))
+                      % (parameters.wg_width, parameters.wg_height, parameters.slab_height))
 
     # Due to how lumerical handles the port object I manually set it via the console for simplicity
     command = ("switchtolayout; setglobalsource('wavelength start', %s); "
@@ -185,10 +185,10 @@ def run_active_bent_wg(parameters, simulation_setup, charge_setup, waveguide_ID,
                       % (filename))
 
     # Defining physical parameters
-    command = "wg_width = %s; Radius = %s; slab_height = %s; Coupling_Length = %s;"
+    command = "wg_height = %s; wg_width = %s; Radius = %s; slab_height = %s; Coupling_Length = %s;"
     lumapi.evalScript(mode, command
-                      % (parameters.wg_width, parameters.radius, parameters.slab_height,
-                         parameters.coupling_length))
+                      % (parameters.wg_height, parameters.wg_width, parameters.radius,
+                         parameters.slab_height, parameters.coupling_length))
 
     # Defining simulation paramters
     command = "Band = '%s'; Waveguide_ID = '%s';"
@@ -287,10 +287,11 @@ def run_charge(parameters, simulation_setup, charge_params, close=True):
                          charge_params.ppp_width, charge_params.npp_width))
 
     # Passing in simulation parameters
-    command = "slab_height = %s; radius = %s; coupling_length = %s; band = '%s';"
+    command = ("slab_height = %s; radius = %s; coupling_length = %s; band = '%s'; wg_height = %s; "
+               "wg_width = %s;")
     lumapi.evalScript(device, command %
                       (parameters.slab_height, parameters.radius, parameters.coupling_length,
-                       simulation_setup.Band))
+                       simulation_setup.Band, parameters.wg_height, parameters.wg_width))
 
     # Passing in charge settings
     command = "v_min = %s; v_max =%s; N =%s; bias = '%s'; save_name = '%s';"

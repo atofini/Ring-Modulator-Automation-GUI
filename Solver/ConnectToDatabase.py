@@ -14,14 +14,14 @@ import shutil
 # Defining connection to database (This will have to be changed when hosted at UBC)
 cnn_string = (
     r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};'
-    r'DBQ=C:\Users\AlexTofini\Desktop\Masters\Masters '
-    r'Research\RingModulatorModel\RingModel_Final\Database\Database.accdb'
+    r'DBQ=C:\Users\AlexTofini\Documents\GitHub\Ring-Modulator-Automation-GUI\Solver\Database'
+    r'\Database.accdb '
 )
 cnn = pyodbc.connect(cnn_string)
 cursor = cnn.cursor()
 
 
-def QueryCouplers(radius, gap, coupling_length, slab_height, band):
+def QueryCouplers(radius, gap, coupling_length, slab_height, band, wg_height, wg_width):
     """
     Query coupler table for matching record.
 
@@ -38,6 +38,10 @@ def QueryCouplers(radius, gap, coupling_length, slab_height, band):
     band : str
         Optical band
         Options : [CL, O].
+    wg_height : float
+        Height of waveguide
+    wg_width : float
+        Width of waveguide
 
     Returns
     -------
@@ -51,8 +55,9 @@ def QueryCouplers(radius, gap, coupling_length, slab_height, band):
         'FROM [Coupler Table]'
         'WHERE ((([Coupler Table].Radius)=%s) AND (([Coupler Table].Gap)=%s) '
         'AND (([Coupler Table].Coupling_Length)=%s) AND (([Coupler Table].Slab_Height)=%s) '
-        'AND (([Coupler Table].Optical_Band)=\'%s\'));'
-    ) % (radius, gap, coupling_length, slab_height, band)
+        'AND (([Coupler Table].Optical_Band)=\'%s\') AND (([Coupler Table].Waveguide_Height)=%s) '
+        'AND (([Coupler Table].Waveguide_Width)=%s));'
+    ) % (radius, gap, coupling_length, slab_height, band, wg_height, wg_width)
 
     # Executing querry and fetching reults
     cursor.execute(sql)
@@ -60,7 +65,8 @@ def QueryCouplers(radius, gap, coupling_length, slab_height, band):
     return result
 
 
-def WriteToCouplers(ID, radius, gap, coupling_length, slab_height, band, f, CC):
+def WriteToCouplers(ID, radius, gap, coupling_length, slab_height, band, wg_height, wg_width,
+                    f, CC):
     """
     Append query used to add record to coupler table.
 
@@ -79,6 +85,10 @@ def WriteToCouplers(ID, radius, gap, coupling_length, slab_height, band, f, CC):
     band : str
         Optical band
         Options : [CL, O].
+    wg_height : float
+        Height of waveguide
+    wg_width : float
+        Width of waveguid
     f : list
         List containing frequency component of coupling coefficient simulation.
     CC : list
@@ -92,10 +102,10 @@ def WriteToCouplers(ID, radius, gap, coupling_length, slab_height, band, f, CC):
     # Defining SQL command
     sql = (
         'INSERT INTO [Coupler Table] ( Coupler_ID, Radius, Gap, Coupling_Length, Slab_Height, '
-        'Optical_Band, Frequency, Coupling_Coefficient )'
+        'Optical_Band, Waveguide_Height, Waveguide_Width, Frequency, Coupling_Coefficient )'
         'SELECT %s AS Expr1, %s AS Expr2, %s AS Expr3, %s AS Expr4, \'%s\' AS Expr5, '
-        '\'%s\' AS Expr6, \'%s\' AS Expr7, \'%s\' AS Expr8;'
-    ) % (ID, radius, gap, coupling_length, slab_height, band, f, CC)
+        '\'%s\' AS Expr6, %s AS Expr7, %s AS Expr8, \'%s\' AS Expr9, \'%s\' AS Expr10;'
+    ) % (ID, radius, gap, coupling_length, slab_height, band, wg_height, wg_width, f, CC)
 
     # Executing querry and commiting to table
     cursor.execute(sql)
@@ -259,9 +269,9 @@ def FindNextIndex(Table_name):
     return nextID
 
 
-def QueryChargeSims(PN_type, slab_height, radius, coupling_length, p_width_core, n_width_core,
-                    p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width, v_min,
-                    v_max, bias, band, foundry):
+def QueryChargeSims(PN_type, slab_height, wg_height, wg_width, radius, coupling_length,
+                    p_width_core, n_width_core, p_width_slab, n_width_slab, pp_width,
+                    np_width, ppp_width, npp_width, v_min, v_max, bias, band, foundry):
     """
     Query CHARGE tables for matching record.
 
@@ -272,6 +282,10 @@ def QueryChargeSims(PN_type, slab_height, radius, coupling_length, p_width_core,
         Options : [Lateral, L-Shaped]
     slab_height : float
         Slab height.
+    wg_height : float
+        Height of waveguide
+    wg_width : float
+        Width of waveguide
     radius : float
         Radius of ring composing the PN junction.
     coupling_length : float
@@ -318,6 +332,8 @@ def QueryChargeSims(PN_type, slab_height, radius, coupling_length, p_width_core,
             'SELECT [Charge AMF Table].*'
             'FROM [Charge AMF Table]'
             'WHERE ((([Charge AMF Table].Type)=\'%s\') AND (([Charge AMF Table].Slab_Height)=%s) '
+            'AND (([Charge AMF Table].Waveguide_Height)=%s) '
+            'AND (([Charge AMF Table].Waveguide_Width)=%s) '
             'AND (([Charge AMF Table].Radius)=%s) AND (([Charge AMF Table].Coupling_Length)=%s) '
             'AND (([Charge AMF Table].P_Width_Core)=%s) AND (([Charge AMF Table].N_Width_Core)=%s) '
             'AND (([Charge AMF Table].P_Width_Slab)=%s) AND (([Charge AMF Table].N_Width_Slab)=%s) '
@@ -326,14 +342,16 @@ def QueryChargeSims(PN_type, slab_height, radius, coupling_length, p_width_core,
             'AND (([Charge AMF Table].Min_Voltage)=%s) AND (([Charge AMF Table].Max_Voltage)=%s) '
             'AND (([Charge AMF Table].Bias)=\'%s\') '
             'AND (([Charge AMF Table].Optical_Band)=\'%s\'));'
-        ) % (PN_type, slab_height, radius, coupling_length, p_width_core, n_width_core,
-             p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width, v_min, v_max,
-             bias, band)
+        ) % (PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
+             n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width,
+             v_min, v_max, bias, band)
     elif foundry == 'AIM':
         sql = (
             'SELECT [Charge AIM Table].*'
             'FROM [Charge AIM Table]'
             'WHERE ((([Charge AIM Table].Type)=\'%s\') AND (([Charge AIM Table].Slab_Height)=%s) '
+            'AND (([Charge AMF Table].Waveguide_Height)=%s) '
+            'AND (([Charge AMF Table].Waveguide_Width)=%s) '
             'AND (([Charge AIM Table].Radius)=%s) AND (([Charge AIM Table].Coupling_Length)=%s) '
             'AND (([Charge AIM Table].P1Al_Width_Core)=%s) '
             'AND (([Charge AIM Table].N1Al_Width_Core)=%s) '
@@ -347,9 +365,9 @@ def QueryChargeSims(PN_type, slab_height, radius, coupling_length, p_width_core,
             'AND (([Charge AIM Table].Max_Voltage)=%s) '
             'AND (([Charge AIM Table].Bias)=\'%s\') '
             'AND (([Charge AIM Table].Optical_Band)=\'%s\'));'
-        ) % (PN_type, slab_height, radius, coupling_length, p_width_core, n_width_core,
-             p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width, v_min, v_max,
-             bias, band)
+        ) % (PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
+             n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width,
+             v_min, v_max, bias, band)
 
     # Executing query and fetching results
     cursor.execute(sql)
@@ -395,9 +413,10 @@ def QueryChargeFile(charge_file, foundry):
     return result
 
 
-def WriteChargeSims(ID, PN_type, slab_height, radius, coupling_length, p_width_core, n_width_core,
-                    p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width, save_name,
-                    v_min, v_max, N, bias, band, foundry, capacitance, resistance, bandwidth):
+def WriteChargeSims(ID, PN_type, slab_height, wg_height, wg_width, radius, coupling_length,
+                    p_width_core, n_width_core, p_width_slab, n_width_slab, pp_width, np_width,
+                    ppp_width, npp_width, save_name, v_min, v_max, N, bias, band, foundry,
+                    capacitance, resistance, bandwidth):
     """
     Append query used to add a record to the CHARGE tables.
 
@@ -410,6 +429,10 @@ def WriteChargeSims(ID, PN_type, slab_height, radius, coupling_length, p_width_c
         Options : [Lateral, L-Shaped]
     slab_height : float
         Slab height.
+    wg_height : float
+        Height of waveguide
+    wg_width : float
+        Width of waveguide
     radius : float
         Radius of ring composing the PN junction.
     coupling_length : float
@@ -461,32 +484,36 @@ def WriteChargeSims(ID, PN_type, slab_height, radius, coupling_length, p_width_c
     """
     if foundry == 'AMF':
         sql = (
-            'INSERT INTO [Charge AMF Table] ( Charge_ID, Type, Slab_Height, Radius, '
+            'INSERT INTO [Charge AMF Table] ( Charge_ID, Type, Slab_Height, Waveguide_Height, '
+            'Waveguide_Width, Radius, '
             'Coupling_Length, P_Width_Core, N_Width_Core, P_Width_Slab, N_Width_Slab, '
             '[P+_Width], [N+_Width], [P++_Width], [N++_Width], Filename, Min_Voltage, Max_Voltage, '
             'N, Bias, Optical_Band, Capacitance, Resistance, Bandwidth )'
             'SELECT %s AS Expr1, \'%s\' AS Expr2, %s AS Expr3, %s AS Expr4, %s AS Expr5, '
-            '%s AS Expr6, %s AS Expr7, %s AS Expr8, %s AS Expr9, %s AS Expr10, %s AS Expr11, '
-            '%s AS Expr12, %s AS Expr13, \'%s\' AS Expr14, %s AS Expr15, %s AS Expr16, '
-            '%s AS Expr17, \'%s\' AS Expr18, \'%s\' AS Expr19, \'%s\' AS Expr20, \'%s\' AS Expr21, '
-            '\'%s\' AS Expr22;'
-        ) % (ID, PN_type, slab_height, radius, coupling_length, p_width_core, n_width_core,
-             p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width, save_name,
-             v_min, v_max, N, bias, band, capacitance, resistance, bandwidth)
+            '%s AS Expr6, %s AS Expr7, '
+            '%s AS Expr8, %s AS Expr9, %s AS Expr10, %s AS Expr11, %s AS Expr12, %s AS Expr13, '
+            '%s AS Expr14, %s AS Expr15, \'%s\' AS Expr16, %s AS Expr17, %s AS Expr18, '
+            '%s AS Expr19, \'%s\' AS Expr20, \'%s\' AS Expr21, \'%s\' AS Expr22, \'%s\' AS Expr23, '
+            '\'%s\' AS Expr24;'
+        ) % (ID, PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
+             n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width,
+             npp_width, save_name, v_min, v_max, N, bias, band, capacitance, resistance, bandwidth)
     elif foundry == 'AIM':
         sql = (
-            'INSERT INTO [Charge AIM Table] ( Charge_ID, Type, Slab_Height, Radius, '
+            'INSERT INTO [Charge AIM Table] ( Charge_ID, Type, Slab_Height, Waveguide_Height, '
+            'Waveguide_Width, Radius, '
             'Coupling_Length, P1Al_Width_Core, N1Al_Width_Core, P1Al_Width_Slab, N1Al_Width_Slab, '
             'P4Al_Width, N3Al_Width, P5Al_Width, N5Al_Width, Filename, Min_Voltage, Max_Voltage, '
             'N, Bias, Optical_Band, Capacitance, Resistance, Bandwidth )'
             'SELECT %s AS Expr1, \'%s\' AS Expr2, %s AS Expr3, %s AS Expr4, %s AS Expr5, '
-            '%s AS Expr6, %s AS Expr7, %s AS Expr8, %s AS Expr9, %s AS Expr10, %s AS Expr11, '
-            '%s AS Expr12, %s AS Expr13, \'%s\' AS Expr14, %s AS Expr15, %s AS Expr16, '
-            '%s AS Expr17, \'%s\' AS Expr18, \'%s\' AS Expr19, \'%s\' AS Expr20, \'%s\' AS Expr21, '
-            '\'%s\' AS Expr22;'
-        ) % (ID, PN_type, slab_height, radius, coupling_length, p_width_core, n_width_core,
-             p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width, save_name,
-             v_min, v_max, N, bias, band, capacitance, resistance, bandwidth)
+            '%s AS Expr6, %s AS Expr7, '
+            '%s AS Expr8, %s AS Expr9, %s AS Expr10, %s AS Expr11, %s AS Expr12, %s AS Expr13, '
+            '%s AS Expr14, %s AS Expr15, \'%s\' AS Expr16, %s AS Expr17, %s AS Expr18, '
+            '%s AS Expr19, \'%s\' AS Expr20, \'%s\' AS Expr21, \'%s\' AS Expr22, \'%s\' AS Expr23, '
+            '\'%s\' AS Expr24;'
+        ) % (ID, PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
+             n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width,
+             npp_width, save_name, v_min, v_max, N, bias, band, capacitance, resistance, bandwidth)
     cursor.execute(sql)
     cursor.commit()
     return
@@ -951,11 +978,11 @@ def CheckDatabaseIntegrity():
         elif name == 'Charge AMF':
             directory = 'Charge_AMF'
             filetype = '.mat'
-            file_database_index = 13
+            file_database_index = 15
         elif name == 'Charge AIM':
             directory = 'Charge_AIM'
             filetype = '.mat'
-            file_database_index = 13
+            file_database_index = 15
         else:
             return
 

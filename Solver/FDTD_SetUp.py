@@ -53,8 +53,8 @@ def calculate_coupling_coefficient(parameters, simulation_setup, **kwargs):
             # If matching record exists in the database, use that data
             print("Database contains a coupling record for current ring parameters")
             coupler_ID = result[0][0]
-            f = database.ParseStringArray(result[0][5])
-            CC = database.ParseStringArray(result[0][6])
+            f = database.ParseStringArray(result[0][7])
+            CC = database.ParseStringArray(result[0][8])
         else:
             # If no matching record exists in the database, build the FDTD simulation
             print("Datase does not contain a coupling record for the current ring parameters")
@@ -76,12 +76,13 @@ def calculate_coupling_coefficient(parameters, simulation_setup, **kwargs):
         # No gap override present so using parameter class object to build entire coupler
         result = database.QueryCouplers(parameters.radius, parameters.gap,
                                         parameters.coupling_length, parameters.slab_height,
-                                        simulation_setup.Band)
+                                        simulation_setup.Band, parameters.wg_height, 
+                                        parameters.wg_width)
         if result != []:
             print("Database contains a coupling record for current ring parameters")
             coupler_ID = result[0][0]
-            f = database.ParseStringArray(result[0][5])
-            CC = database.ParseStringArray(result[0][6])
+            f = database.ParseStringArray(result[0][7])
+            CC = database.ParseStringArray(result[0][8])
         else:
             print("Datase does not contain a coupling record for the current ring parameters")
             print("Executing FDTD simulation")
@@ -92,7 +93,8 @@ def calculate_coupling_coefficient(parameters, simulation_setup, **kwargs):
             # Now executing append query to  save the data
             database.WriteToCouplers(nextID, parameters.radius, parameters.gap,
                                      parameters.coupling_length, parameters.slab_height,
-                                     simulation_setup.Band, f, CC)
+                                     simulation_setup.Band, parameters.wg_height,
+                                     parameters.wg_width, f, CC)
             coupler_ID = nextID
 
     # Combined results into list

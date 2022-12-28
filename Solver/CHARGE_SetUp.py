@@ -34,6 +34,7 @@ def simulateForAMF(parameters, simulation_setup, charge_setup):
     """
     # Query AMF CHARGE table for matching record
     result = database.QueryChargeSims(charge_setup.PN_type, parameters.slab_height,
+                                      parameters.wg_height, parameters.wg_width,
                                       parameters.radius, parameters.coupling_length,
                                       charge_setup.p_width_core, charge_setup.n_width_core,
                                       charge_setup.p_width_slab, charge_setup.n_width_slab,
@@ -45,10 +46,10 @@ def simulateForAMF(parameters, simulation_setup, charge_setup):
         # If matching record exists, use the results
         print("Database contains a record for current PN Junction")
         # Recording the previously user-specified filename
-        filename = result[0][13]
-        capacitance_avg = result[0][19]
-        resistance_avg = result[0][20]
-        bandwidth_avg = result[0][21]
+        filename = result[0][15]
+        capacitance_avg = result[0][21]
+        resistance_avg = result[0][22]
+        bandwidth_avg = result[0][23]
         SimRun = False
     else:
         # If no matching record exists, use LumAPI to create the CHARGE simulation
@@ -63,6 +64,7 @@ def simulateForAMF(parameters, simulation_setup, charge_setup):
 
         # Execute append querry to save new record
         database.WriteChargeSims(nextID, charge_setup.PN_type, parameters.slab_height,
+                                 parameters.wg_height, parameters.wg_width,
                                  parameters.radius, parameters.coupling_length,
                                  charge_setup.p_width_core, charge_setup.n_width_core,
                                  charge_setup.p_width_slab, charge_setup.n_width_slab,
@@ -111,6 +113,7 @@ def simulateForAIM(parameters, simulation_setup, charge_setup):
     """
     # Query AIM CHARGE table for matching record
     result = database.QueryChargeSims(charge_setup.PN_type, parameters.slab_height,
+                                      parameters.wg_height, parameters.wg_width,
                                       parameters.radius, parameters.coupling_length,
                                       charge_setup.p_width_core, charge_setup.n_width_core,
                                       charge_setup.p_width_slab, charge_setup.n_width_slab,
@@ -122,7 +125,10 @@ def simulateForAIM(parameters, simulation_setup, charge_setup):
         # If matching record exists, use the results
         print("Database contains a record for current PN Junction")
         # Recording the previously user-specified filename
-        filename = result[0][13]
+        filename = result[0][15]
+        capacitance_avg = result[0][21]
+        resistance_avg = result[0][22]
+        bandwidth_avg = result[0][23]
         SimRun = False
     else:
         # If no matching record exists, use LumAPI to create the CHARGE simulation
@@ -137,6 +143,7 @@ def simulateForAIM(parameters, simulation_setup, charge_setup):
 
         # Execute append querry to save new record
         database.WriteChargeSims(nextID, charge_setup.PN_type, parameters.slab_height,
+                                 parameters.wg_height, parameters.wg_width,
                                  parameters.radius, parameters.coupling_length,
                                  charge_setup.p_width_core, charge_setup.n_width_core,
                                  charge_setup.p_width_slab, charge_setup.n_width_slab,

@@ -1385,6 +1385,69 @@ def CheckChargeFile(values, charge_file_warning, bool_define_charge):
     return bool_load_charge, file
 
 
+def check_for_corner_analysis_charge(values):
+    """
+    Check if selected charge file is valid.
+
+    Parameters
+    ----------
+    values : dictionary
+        Dictionairy containing all the values present in the GUI.
+
+    Returns
+    -------
+    bool_charge_corner_BL : int
+        Boolean tracker that determined if Bottom left corner analysis has been performed
+    bool_charge_corner_BR : int
+        Boolean tracker that determined if Bottom right corner analysis has been performed
+    bool_charge_corner_TL : int
+        Boolean tracker that determined if Top left corner analysis has been performed
+    bool_charge_corner_TR : int
+        Boolean tracker that determined if Top right corner analysis has been performed
+
+    """
+    from pathlib import Path
+
+    # Initialize boolean tracker as default
+    bool_charge_corner_BL = 0
+    bool_charge_corner_BR = 0
+    bool_charge_corner_TL = 0
+    bool_charge_corner_TR = 0
+    file_BL = None
+    file_BR = None
+    file_TL = None
+    file_TR = None
+
+    # Extract path from dictionairy
+    path = values['-CHARGE_FILE-']
+    path_BL = path.removesuffix('.mat') + '_BL_Corner.mat'
+    path_BR = path.removesuffix('.mat') + '_BR_Corner.mat'
+    path_TL = path.removesuffix('.mat') + '_TL_Corner.mat'
+    path_TR = path.removesuffix('.mat') + '_TR_Corner.mat'
+
+    isExist_BL = os.path.exists(path_BL)
+    isExist_BR = os.path.exists(path_BR)
+    isExist_TL = os.path.exists(path_TL)
+    isExist_TR = os.path.exists(path_TR)
+
+    if isExist_BL:
+        bool_charge_corner_BL = 1
+        file_BL = Path(path_BL)
+    if isExist_BR:
+        bool_charge_corner_BR = 1
+        file_BR = Path(path_BR)
+    if isExist_TL:
+        bool_charge_corner_TL = 1
+        file_TL = Path(path_TL)
+    if isExist_TR:
+        bool_charge_corner_TR = 1
+        file_TR = Path(path_TR)
+
+    return (bool_charge_corner_BL, bool_charge_corner_BR,
+            bool_charge_corner_TL, bool_charge_corner_TR,
+            file_BL, file_BR, file_TL, file_TR)
+
+
 def check_secondary_inputs(values, CHARGE_file, laser_warning,
                            vmin_warning, vmax_warning, bitrate_warning):
     """

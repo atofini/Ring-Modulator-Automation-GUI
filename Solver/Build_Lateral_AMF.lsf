@@ -6,11 +6,12 @@ deleteall;
 cwd = pwd;
 cd(cwd + "\\database\\charge_AMF");
 
-Waveguide_Height = 0.22e-6;
+Waveguide_Height = wg_height;
+Waveguide_Width = wg_width;
 if (band == 'CL'){
-    Waveguide_Width = 0.5e-6;
+    Waveguide_Width_Nominal = 0.5e-6;
 }else{
-    Waveguide_Width = 0.35e-6;
+    Waveguide_Width_Nominal = 0.31e-6;
 }
 
 Pad_Heigth = Waveguide_Height - slab_height;
@@ -68,15 +69,17 @@ set("max edge length",0.01e-6);
 set("y",Waveguide_Height/2);
 set("z span", 1e-6);
 
+#Calculating slab differene from waveguide shrinkage/expansion
+slab_extra = (Waveguide_Width_Nominal - Waveguide_Width)/2;
 
 # Slab
 addrect;
 set("name","Left Slab");
 set("material","Si (Silicon)");
-set("x", -Waveguide_Width/2 - p_width_slab/2 - pp_width/2 - ppp_width/2);
+set("x", slab_extra/2 -Waveguide_Width_Nominal/2 - p_width_slab/2 - pp_width/2 - ppp_width/2);
 set("y", slab_height/2);
 set("z", 0);
-set("x span", p_width_slab + pp_width + ppp_width);
+set("x span", p_width_slab + pp_width + ppp_width + slab_extra);
 set("y span", slab_height);
 set("z span", Sim_Length);
 set("enabled",1);
@@ -84,10 +87,10 @@ set("enabled",1);
 addrect;
 set("name","Right Slab");
 set("material","Si (Silicon)");
-set("x", Waveguide_Width/2 + n_width_slab/2 +  np_width/2 + npp_width/2);
+set("x", - slab_extra/2 + Waveguide_Width_Nominal/2 + n_width_slab/2 +  np_width/2 + npp_width/2);
 set("y", slab_height/2);
 set("z", 0);
-set("x span", n_width_slab + np_width + npp_width);
+set("x span", n_width_slab + np_width + npp_width +slab_extra);
 set("y span", slab_height);
 set("z span", Sim_Length);
 set("enabled",1);
@@ -122,7 +125,7 @@ set("mesh order",3);
 
 addrect;
 set("name","source");
-set("x",-Waveguide_Width/2 - p_width_slab - pp_width - ppp_width/2);
+set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width - ppp_width/2);
 set("y",slab_height + Pad_Heigth/2);
 set("z",0);
 set("x span", npp_width);
@@ -133,7 +136,7 @@ set("material","Al (Aluminium)");
 
 addrect;
 set("name","drain");
-set("x",Waveguide_Width/2 + n_width_slab + np_width + npp_width/2);
+set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width + npp_width/2);
 set("y",slab_height + Pad_Heigth/2);
 set("z",0);
 set("x span", ppp_width);
@@ -163,7 +166,7 @@ set("name","doping");
 
 adddope;
 set("name","n_core");
-set("x",Waveguide_Width/2-n_width_core/2);
+set("x",Waveguide_Width_Nominal/2-n_width_core/2);
 set("y",Waveguide_Height/2);
 set("z",0);
 set("x span",n_width_core);
@@ -175,7 +178,7 @@ addtogroup("doping");
 
 adddope;
 set("name","p_core");
-set("x",-Waveguide_Width/2+p_width_core/2);
+set("x",-Waveguide_Width_Nominal/2+p_width_core/2);
 set("y",Waveguide_Height/2);
 set("z",0);
 set("x span",p_width_core);
@@ -187,11 +190,11 @@ addtogroup("doping");
 
 adddope;
 set("name","n_slab");
-set("x",Waveguide_Width/2 + n_width_slab/2);
-set("y",slab_height/2);
+set("x",Waveguide_Width_Nominal/2 + n_width_slab/2);
+set("y",Waveguide_Height/2);
 set("z",0);
 set("x span",n_width_slab);
-set("y span",slab_height);
+set("y span",Waveguide_Height);
 set("z span",1.5e-6);
 set("dopant type","n");
 set("concentration",2.1e23);
@@ -199,11 +202,11 @@ addtogroup("doping");
 
 adddope;
 set("name","p_slab");
-set("x",-Waveguide_Width/2 - p_width_slab/2);
-set("y",slab_height/2);
+set("x",-Waveguide_Width_Nominal/2 - p_width_slab/2);
+set("y",Waveguide_Height/2);
 set("z",0);
 set("x span",p_width_slab);
-set("y span",slab_height);
+set("y span",Waveguide_Height);
 set("z span",1.5e-6);
 set("dopant type","p");
 set("concentration",3.6e23);
@@ -211,7 +214,7 @@ addtogroup("doping");
 
 adddope;
 set("name","n+");
-set("x",Waveguide_Width/2 + n_width_slab + np_width/2);
+set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width/2);
 set("y",slab_height/2);
 set("z",0);
 set("x span",np_width);
@@ -223,7 +226,7 @@ addtogroup("doping");
 
 adddope;
 set("name","p+");
-set("x",-Waveguide_Width/2 - p_width_slab - pp_width/2);
+set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width/2);
 set("y",slab_height/2);
 set("z",0);
 set("x span",pp_width);
@@ -235,7 +238,7 @@ addtogroup("doping");
 
 adddope;
 set("name","n++");
-set("x",Waveguide_Width/2 + n_width_slab + np_width + npp_width/2);
+set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width + npp_width/2);
 set("y",slab_height/2);
 set("z",0);
 set("x span",npp_width);
@@ -247,7 +250,7 @@ addtogroup("doping");
 
 adddope;
 set("name","p++");
-set("x",-Waveguide_Width/2 - p_width_slab - pp_width - ppp_width/2);
+set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width - ppp_width/2);
 set("y",slab_height/2);
 set("z",0);
 set("x span",ppp_width);

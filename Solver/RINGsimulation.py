@@ -45,7 +45,7 @@ class Physical_Parameters():
         self.gap = 0
         self.coupling_length = 0
         self.wg_width = 0
-        self.thick_Si = 0.22e-6
+        self.wg_height = 0
         self.slab_height = 0
 
 
@@ -245,7 +245,7 @@ class results():
 
 
 def runSimulation(Radius, Gap, Slab_Height, CouplingLength, LambdaStart, LambdaEnd, Band,
-                  CHARGE_file, prop_loss):
+                  CHARGE_file, prop_loss, Waveguide_Height, Waveguide_Width):
     """
     Execute simulation pipeline to create requested micro-ring modulator.
 
@@ -288,12 +288,14 @@ def runSimulation(Radius, Gap, Slab_Height, CouplingLength, LambdaStart, LambdaE
     parameters.gap = Gap
     parameters.slab_height = Slab_Height
     parameters.coupling_length = CouplingLength
+    parameters.wg_width = Waveguide_Width
+    parameters.wg_height = Waveguide_Height
 
     # Populating simulation settings
-    if Band == 'CL':
-        parameters.wg_width = 0.5e-6
-    else:
-        parameters.wg_width = 0.35e-6
+    # if Band == 'CL':
+    #    parameters.wg_width = 0.5e-6
+    # else:
+    #    parameters.wg_width = 0.35e-6
     simulation_setup.lambda_start = LambdaStart
     simulation_setup.lambda_end = LambdaEnd
     simulation_setup.Band = Band
@@ -310,23 +312,23 @@ def runSimulation(Radius, Gap, Slab_Height, CouplingLength, LambdaStart, LambdaE
         result = result_check
         charge_setup.foundry = 'AMF'
 
-    # Populating charge settings
+    # Populating CHARGE settings
     charge_setup.PN_type = result[0][1]
-    charge_setup.p_width_core = result[0][5]
-    charge_setup.n_width_core = result[0][6]
-    charge_setup.p_width_slab = result[0][7]
-    charge_setup.n_width_slab = result[0][8]
-    charge_setup.pp_width = result[0][9]
-    charge_setup.np_width = result[0][10]
-    charge_setup.ppp_width = result[0][11]
-    charge_setup.npp_width = result[0][12]
-    charge_setup.vmin = result[0][14]
-    charge_setup.vmax = result[0][15]
-    charge_setup.charge_datapoints = result[0][16]
-    charge_setup.bias = result[0][17]
-    saved_results.capacitance = database.ParseStringArray(result[0][19])
-    saved_results.resistance = database.ParseStringArray(result[0][20])
-    saved_results.bandwidth = database.ParseStringArray(result[0][21])
+    charge_setup.p_width_core = result[0][7]
+    charge_setup.n_width_core = result[0][8]
+    charge_setup.p_width_slab = result[0][9]
+    charge_setup.n_width_slab = result[0][10]
+    charge_setup.pp_width = result[0][11]
+    charge_setup.np_width = result[0][12]
+    charge_setup.ppp_width = result[0][13]
+    charge_setup.npp_width = result[0][14]
+    charge_setup.vmin = result[0][16]
+    charge_setup.vmax = result[0][17]
+    charge_setup.charge_datapoints = result[0][18]
+    charge_setup.bias = result[0][19]
+    saved_results.capacitance = database.ParseStringArray(result[0][21])
+    saved_results.resistance = database.ParseStringArray(result[0][22])
+    saved_results.bandwidth = database.ParseStringArray(result[0][23])
     charge_setup.CHARGE_file = str(CHARGE_file)
 
     # Executing coupling region simulation in FDTD and saving results to result class
@@ -356,7 +358,7 @@ def runSimulation(Radius, Gap, Slab_Height, CouplingLength, LambdaStart, LambdaE
 def runPNJunctionSimulator(p_width_core, n_width_core, p_width_slab, n_width_slab,
                            pp_width, np_width, ppp_width, npp_width, slab_height,
                            radius, coupling_length, vmin, vmax, save_name, bias,
-                           band, foundry, PN_type):
+                           band, foundry, PN_type, wg_height, wg_width):
     """
     Execute CHARGE simulation process for defined PN-junction.
 
@@ -410,6 +412,10 @@ def runPNJunctionSimulator(p_width_core, n_width_core, p_width_slab, n_width_sla
     PN_type : str
         PN-junction type.
         Options: [Lateral, L-Shaped]
+    wg_height : float
+        Height of waveguide
+    wg_width : float
+        Width of waveguide
 
     Returns
     -------
@@ -428,6 +434,8 @@ def runPNJunctionSimulator(p_width_core, n_width_core, p_width_slab, n_width_sla
     parameters.slab_height = slab_height
     parameters.radius = radius
     parameters.coupling_length = coupling_length
+    parameters.wg_height = wg_height
+    parameters.wg_width = wg_width
 
     # Populating simulation settions
     simulation_setup.Band = band
@@ -632,21 +640,21 @@ def CriticalCouplingAutomation(Radius, Gaps, Slab_Height, CouplingLength, Lambda
 
     # Populating CHARGE settings
     charge_setup.PN_type = result[0][1]
-    charge_setup.p_width_core = result[0][5]
-    charge_setup.n_width_core = result[0][6]
-    charge_setup.p_width_slab = result[0][7]
-    charge_setup.n_width_slab = result[0][8]
-    charge_setup.pp_width = result[0][9]
-    charge_setup.np_width = result[0][10]
-    charge_setup.ppp_width = result[0][11]
-    charge_setup.npp_width = result[0][12]
-    charge_setup.vmin = result[0][14]
-    charge_setup.vmax = result[0][15]
-    charge_setup.charge_datapoints = result[0][16]
-    charge_setup.bias = result[0][17]
-    saved_results.capacitance = database.ParseStringArray(result[0][19])
-    saved_results.resistance = database.ParseStringArray(result[0][20])
-    saved_results.bandwidth = database.ParseStringArray(result[0][21])
+    charge_setup.p_width_core = result[0][7]
+    charge_setup.n_width_core = result[0][8]
+    charge_setup.p_width_slab = result[0][9]
+    charge_setup.n_width_slab = result[0][10]
+    charge_setup.pp_width = result[0][11]
+    charge_setup.np_width = result[0][12]
+    charge_setup.ppp_width = result[0][13]
+    charge_setup.npp_width = result[0][14]
+    charge_setup.vmin = result[0][16]
+    charge_setup.vmax = result[0][17]
+    charge_setup.charge_datapoints = result[0][18]
+    charge_setup.bias = result[0][19]
+    saved_results.capacitance = database.ParseStringArray(result[0][21])
+    saved_results.resistance = database.ParseStringArray(result[0][22])
+    saved_results.bandwidth = database.ParseStringArray(result[0][23])
     charge_setup.CHARGE_file = str(CHARGE_file)
 
     # Begining critical coupling automation sequence

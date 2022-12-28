@@ -92,6 +92,27 @@ def toggle_PN_Plot_Options(show):
     Bandwidth_plot_button.update(visible=show)
 
 
+def toggle_Corner_Analysis_Results(show):
+    """
+    Toggle the corner analysis result optionsin the result tab.
+
+    Parameters
+    ----------
+    show : bool
+        Boolean control to dictate whether the corner analysis results should be visible
+
+    Returns
+    -------
+    None.
+
+    """
+    Nominal_plot.update(visible=show)
+    BL_plot.update(visible=show)
+    BR_plot.update(visible=show)
+    TL_plot.update(visible=show)
+    TR_plot.update(visible=show)
+
+
 def update_text_results(str1, str2, str3, str4, str5):
     """
     Display text results for transmission window to user.
@@ -153,6 +174,362 @@ def disable_secondary_inputs():
     Eye_button.Update(visible=False)
     non_linearity_correction.Update(visible=False)
     non_linearity_correction.Update(visible=False)
+
+
+def plot_CC(saved_results, identifier='Nominal'):
+    """
+    Plot coupling coefficient i.e the power coupling coefficient.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Disable secondary inputs in case the user has previously selected a tab with them
+    disable_secondary_inputs()
+
+    # Enable PN junction plot option buttons
+    toggle_PN_Plot_Options(False)
+
+    # Creating Matplotlib figure
+    plt.figure(1)
+    plt.figure(1).clear()
+    fig = plt.gcf()
+    DPI = fig.get_dpi()
+
+    # Defining TKcanvas canvas size
+    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
+
+    # Plotting power coupling results in figure
+    CC = saved_results.CC
+    CC_f = saved_results.f
+    c = 299792458
+    wavl = [c/x/1e-9 for x in CC_f]
+    x = wavl
+    y = CC
+    plt.plot(x, y)
+    plt.title('[' + identifier + '] Coupling Efficiency vs. Wavelength')
+    plt.xlabel('Wavelength [nm]')
+    plt.ylabel('Efficiency [%]')
+    plt.grid()
+
+    # Converting figure to canvas plot
+    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+
+    # Cleaning up text_results since they are not applicable here
+    update_text_results('', '', '', '', '')
+
+
+def plot_NEFF(saved_results, identifier='Nominal'):
+    """
+    Plot change in effective index versus voltage.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Disable secondary inputs in case the user has previously selected a tab with them
+    disable_secondary_inputs()
+
+    # Enable PN junction plot option buttons
+    toggle_PN_Plot_Options(False)
+
+    # Creating Matplotlib figure
+    plt.figure(1)
+    plt.figure(1).clear()
+    fig = plt.gcf()
+    DPI = fig.get_dpi()
+
+    # Defining TKcanvas canvas size
+    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
+
+    # Plotting change in effective index plot
+    dNeff = saved_results.dNeff
+    x = dNeff[0]
+    y1 = dNeff[1]
+    y2 = dNeff[2]
+    plt.plot(x, y1, label="Real")
+    plt.plot(x, y2, label="Imaginary")
+    plt.title('Delta Neff vs. Voltage')
+    plt.xlabel('Voltage [V]')
+    plt.ylabel('Delta Neff')
+    plt.legend(loc="upper right")
+    plt.grid()
+
+    # Converting figure to canvas plot
+    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+
+    # Cleaning up text_results since they are not applicable here
+    update_text_results('', '', '', '', '')
+
+
+def plot_T(saved_results, identifier='Nominal'):
+    """
+    Plot transmission spectra of the ring modulator.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Disable secondary inputs in case the user has previously selected a tab with them
+    disable_secondary_inputs()
+
+    # Enable PN junction plot option buttons
+    toggle_PN_Plot_Options(False)
+
+    # Creating Matplotlib figure
+    plt.figure(1)
+    plt.figure(1).clear()
+    fig = plt.gcf()
+    DPI = fig.get_dpi()
+
+    # Defining TKcanvas canvas size
+    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
+
+    # Plotting transmission spectra and shift w.r.t voltage
+    dNeff = saved_results.dNeff
+    wavelength = saved_results.wavelength
+    wavelength = wavelength*1e9
+    T = saved_results.T
+    V = dNeff[0]
+    dV = abs(V[len(V)-1] - V[0])/(len(V)-1)
+    for i in range(len(T)):
+        plt.plot(wavelength, T[i, :])
+
+    plt.title('Transmission Spectra for V= ' +
+              str(V[0]) + " to " + str(V[len(V)-1]) + "in steps of " + str(dV))
+    plt.xlabel('Wavleength [nm]')
+    plt.ylabel('Transmission [dB]')
+    plt.legend(loc="upper right")
+    plt.grid()
+
+    # Converting figure to canvas plot
+    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+
+    # Extracting FOMs to display to user
+
+    # Isolating non biased data, aka 0V
+    non_biased_T = T[0, :]
+
+    # Solving list of resonances
+    height = 0.01
+    [indx, peaks] = find_peaks(-1*non_biased_T, height)
+    plt.plot(wavelength[indx], non_biased_T[indx], "x")
+    resonance_list = wavelength[indx]
+    result1_str = 'Resonance [nm]: [ '
+    for i in range(len(resonance_list)):
+        result1_str = result1_str + str(round(resonance_list[i], 3)) + ', '
+    result1_str = result1_str + ']'
+    result1_str = textwrap.wrap(result1_str, 40)
+
+    # Solving list of FSRs
+    FSR_list = [0] * (len(resonance_list)-1)
+    result2_str = 'FSR [nm]: [ '
+    for i in range(len(FSR_list)):
+        FSR_list[i] = round(resonance_list[i+1]-resonance_list[i], 2)
+        result2_str = result2_str + str(FSR_list[i]) + ', '
+
+    result2_str = result2_str + ']'
+
+    # Solving list of 3dB bandwidths
+    three_dB_bandwidth = [0] * (len(resonance_list))
+    three_dB_line = [-3]*len(non_biased_T)
+    idx = np.argwhere(np.diff(np.sign(three_dB_line - non_biased_T))).flatten()
+    three_dB_intersections = wavelength[idx]
+    result3_str = '3 dB Bandwidth [nm]: [ '
+    for i in range(int(len(three_dB_intersections)/2)):
+        print(i)
+        three_dB_bandwidth[i] = round(
+            np.abs(three_dB_intersections[2*i+1] - three_dB_intersections[2*i]), 3)
+        result3_str = result3_str + str(three_dB_bandwidth[i]) + ', '
+
+    result3_str = result3_str + ']'
+
+    # Solving list of quality factors
+    Qfactor = resonance_list/three_dB_bandwidth
+    Qfactor = np.around(Qfactor, decimals=-2)
+    Qfactor = Qfactor.astype(int)
+    result4_str = 'Q: [ '
+    for i in range(len(Qfactor)):
+        result4_str = result4_str + str(Qfactor[i]) + ', '
+
+    result4_str = result4_str + ']'
+
+    # Getting insertion loss Results
+    result5_str = 'Insertion Loss [dB]: [ '
+    ILs = np.round(np.array(peaks['peak_heights']), 2)
+    result5_str = result5_str + str(ILs) + ' ]'
+
+    # Updating the displayed results
+    update_text_results(result1_str, result2_str, result3_str, result4_str, result5_str)
+
+
+def plot_Phase(saved_results, identifier='Nominal'):
+    """
+    Plot PN junction phase chnage.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Creating Matplotlib figure
+    plt.figure(1)
+    plt.figure(1).clear()
+    fig = plt.gcf()
+    DPI = fig.get_dpi()
+
+    # Defining TKcanvas canvas size
+    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
+
+    # Plotting change in effective index plot
+    phase_shift = saved_results.phase_shift
+    x = phase_shift[0]
+    y1 = phase_shift[1]
+    plt.plot(x, y1, label="Phase")
+    plt.title('Phase Shift vs. Voltage')
+    plt.xlabel('Voltage [V]')
+    plt.ylabel('Phase [rads]')
+    plt.legend(loc="upper right")
+    plt.grid()
+
+    # Converting figure to canvas plot
+    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+
+    # Determining if Vpi has been resolved
+    max_shift = max(phase_shift[1])
+    if max_shift < math.pi:
+        result_str1 = 'Vpi was not resolved'
+    else:
+        indx = min(range(len(phase_shift[1])), key=lambda i: abs(phase_shift[1][i]-math.pi))
+        Vpi = phase_shift[0][indx]
+        result_str1 = "Vpi = " + str(Vpi) + " Volts"
+    # Updating result strings
+    update_text_results(result_str1, '', '', '', '')
+
+
+def plot_Capacitance(saved_results, identifier='Nominal'):
+    """
+    Plot PN junction capacitance versus voltage.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Creating Matplotlib figure
+    plt.figure(1)
+    plt.figure(1).clear()
+    fig = plt.gcf()
+    DPI = fig.get_dpi()
+
+    # Defining TKcanvas canvas size
+    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
+
+    # Plotting change in effective index plot
+    capacitance = saved_results.capacitance
+    phase_shift = saved_results.phase_shift
+    voltage = phase_shift[0]
+    x = voltage
+    capacitance_scaled = [x/1e-10 for x in capacitance]
+    y1 = capacitance_scaled
+    plt.plot(x, y1, label="Average Capacitance")
+    plt.title('Capacitance vs. Voltage')
+    plt.xlabel('Voltage [V]')
+    plt.ylabel('Capacitance [pf/cm]')
+    plt.legend(loc="upper right")
+    plt.grid()
+
+    # Converting figure to canvas plot
+    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+
+    # Updating result strings
+    update_text_results('', '', '', '', '')
+
+
+def plot_Resistance(saved_results, identifier='Nominal'):
+    """
+    Plot PN junction resistance versus voltage.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Creating Matplotlib figure
+    plt.figure(1)
+    plt.figure(1).clear()
+    fig = plt.gcf()
+    DPI = fig.get_dpi()
+
+    # Defining TKcanvas canvas size
+    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
+
+    # Plotting change in effective index plot
+    resistance = saved_results.resistance
+    phase_shift = saved_results.phase_shift
+    voltage = phase_shift[0]
+    x = voltage
+    resistance_scaled = [x/100 for x in resistance]
+    y1 = resistance_scaled
+    plt.plot(x, y1, label="Average Resistance")
+    plt.title('Resistance vs. Voltage')
+    plt.xlabel('Voltage [V]')
+    plt.ylabel('Resistance [Ohm.cm]')
+    plt.legend(loc="upper right")
+    plt.grid()
+
+    # Converting figure to canvas plot
+    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+
+    # Updating result strings
+    update_text_results('', '', '', '', '')
+
+
+def plot_Bandwidth(saved_results, identifier='Nominal'):
+    """
+    Plot PN junction bandwidth versus voltage.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Creating Matplotlib figure
+    plt.figure(1)
+    plt.figure(1).clear()
+    fig = plt.gcf()
+    DPI = fig.get_dpi()
+
+    # Defining TKcanvas canvas size
+    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
+
+    # Plotting change in effective index plot
+    capacitance = saved_results.capacitance
+    resistance = saved_results.resistance
+    phase_shift = saved_results.phase_shift
+    voltage = phase_shift[0]
+    x = voltage
+    capacitance_scaled = [x/1e-10 for x in capacitance]
+    resistance_scaled = [x/100 for x in resistance]
+    bandwidth_scaled = [1/(2*math.pi*x*y)/1e-12/1e9 for x,
+                        y in zip(resistance_scaled, capacitance_scaled)]
+
+    y1 = bandwidth_scaled
+    plt.plot(x, y1, label="Average Bandwidth")
+    plt.title('Bandwidth vs. Voltage')
+    plt.xlabel('Voltage [V]')
+    plt.ylabel('Bandwidth [GHz]')
+    plt.legend(loc="upper right")
+    plt.grid()
+
+    # Converting figure to canvas plot
+    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+
+    # Updating result strings
+    update_text_results('', '', '', '', '')
 
 
 class Toolbar(NavigationToolbar2Tk):
@@ -249,6 +626,11 @@ main_tab = [
                  visible=True,
                  change_submits=True,
                  key='-CRITICAL_COUPLE-')],
+    [sg.Checkbox('Perform Corner Analysis (Width +- 50nm, Height +- 25nm)',
+                 default=False,
+                 visible=True,
+                 change_submits=True,
+                 key='-CORNER_ANALYSIS-')],
     [sg.Text('Propagation Loss [dB/cm]'),
      sg.Input('2.5',
               s=(box_size, 1),
@@ -446,6 +828,36 @@ charge_tab = [
 ]
 # Creating elements on result window
 results_tab = [
+    [sg.Radio('Nominal',
+              "RADIO_Corner",
+              default=True,
+              visible=False,
+              enable_events=False,
+              key='-NOMINAL-'),
+     sg.Radio('Bottom Left Corner',
+              "RADIO_Corner",
+              default=False,
+              visible=False,
+              enable_events=False,
+              key='-CORNER_BL-'),
+     sg.Radio('Bottom Right Corner',
+              "RADIO_Corner",
+              default=False,
+              visible=False,
+              enable_events=False,
+              key='-CORNER_BR-'),
+     sg.Radio('Top Left Corner',
+              "RADIO_Corner",
+              default=False,
+              visible=False,
+              enable_events=False,
+              key='-CORNER_TL-'),
+     sg.Radio('Top Right Corner',
+              "RADIO_Corner",
+              default=False,
+              visible=False,
+              enable_events=False,
+              key='-CORNER_TR-')],
     [sg.B('Coupling Coefficient',
           disabled=True,
           key='-CC-'),
@@ -601,6 +1013,7 @@ results_window = window['-RESULTS_TAB-']
 charge_file = window['-CHARGE_FILE-']
 browse_button = window['-BROWSE-']
 run_charge = window['-RUN_CHARGE-']
+corner_analysis = window['-CORNER_ANALYSIS-']
 propagation_loss_box = window['-PROP_LOSS-']
 propagation_loss_warning = window['-PROP_LOSS_WARNING-']
 gap_box = window['-GAP-']
@@ -618,6 +1031,14 @@ Phase_plot_button = window['-PHASE-']
 Capacitance_plot_button = window['-CAPACITANCE-']
 Resistance_plot_button = window['-RESISTANCE-']
 Bandwidth_plot_button = window['-BANDWIDTH-']
+
+# Creating handels for the corner analysis result options
+Nominal_plot = window['-NOMINAL-']
+BL_plot = window['-CORNER_BL-']
+BR_plot = window['-CORNER_BR-']
+TL_plot = window['-CORNER_TL-']
+TR_plot = window['-CORNER_TR-']
+
 
 # Creating handles for the scalar result displays
 Result1 = window['-RESULT1-']
@@ -796,6 +1217,16 @@ while True:
         bool_load_charge, CHARGE_file = verify.CheckChargeFile(
             values, charge_file_warning, bool_define_charge)
 
+        if values['-CORNER_ANALYSIS-']:
+            (bool_charge_corner_BL,
+             bool_charge_corner_BR,
+             bool_charge_corner_TL,
+             bool_charge_corner_TR,
+             CHARGE_file_BL,
+             CHARGE_file_BR,
+             CHARGE_file_TL,
+             CHARGE_file_TR) = verify.check_for_corner_analysis_charge(values)
+
         # Verifying propagation loss
         bool_prop_loss, prop_loss = verify.CheckPropLoss(
             values, propagation_loss_warning)
@@ -842,6 +1273,20 @@ while True:
         slab_height_SI = round(slab_height*1e-9, 10)
         CouplingLength_SI = round(CouplingLength*1e-6, 10)
 
+        # Defining corner analysis range
+        wg_heights = [200e-9, 240e-9]
+        if band == 'CL':
+            wg_widths = [450e-9, 550e-9]
+        else:
+            wg_widths = [260-9, 360e-9]
+
+        # Defining nominal device
+        wg_height = 220e-9
+        if band == 'CL':
+            wg_width = 500e-9
+        else:
+            wg_width = 310-9
+
         try:
             # Simulating charge distribution
             CHARGE_FILE, SimRun = sim.runPNJunctionSimulator(p_width_core, n_width_core,
@@ -851,7 +1296,52 @@ while True:
                                                              slab_height_SI, Radius_SI,
                                                              CouplingLength_SI, vmin_charge,
                                                              vmax_charge, save_name,
-                                                             bias, band, foundry, PN_Type)
+                                                             bias, band, foundry, PN_Type,
+                                                             wg_height, wg_width)
+            if values['-CORNER_ANALYSIS-']:
+                # Repeating 4 times for all corners
+                if not SimRun:
+                    save_name = CHARGE_FILE
+                CHARGE_FILE_BL, SimRun = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                    p_width_slab, n_width_slab,
+                                                                    pp_width, np_width,
+                                                                    ppp_width, npp_width,
+                                                                    slab_height_SI, Radius_SI,
+                                                                    CouplingLength_SI, vmin_charge,
+                                                                    vmax_charge,
+                                                                    save_name + '_BL_Corner',
+                                                                    bias, band, foundry, PN_Type,
+                                                                    wg_heights[0], wg_widths[0])
+                CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                               p_width_slab, n_width_slab,
+                                                               pp_width, np_width,
+                                                               ppp_width, npp_width,
+                                                               slab_height_SI, Radius_SI,
+                                                               CouplingLength_SI, vmin_charge,
+                                                               vmax_charge,
+                                                               save_name + '_BR_Corner',
+                                                               bias, band, foundry, PN_Type,
+                                                               wg_heights[0], wg_widths[1])
+                CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                               p_width_slab, n_width_slab,
+                                                               pp_width, np_width,
+                                                               ppp_width, npp_width,
+                                                               slab_height_SI, Radius_SI,
+                                                               CouplingLength_SI, vmin_charge,
+                                                               vmax_charge,
+                                                               save_name + '_TL_Corner',
+                                                               bias, band, foundry, PN_Type,
+                                                               wg_heights[1], wg_widths[0])
+                CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                               p_width_slab, n_width_slab,
+                                                               pp_width, np_width,
+                                                               ppp_width, npp_width,
+                                                               slab_height_SI, Radius_SI,
+                                                               CouplingLength_SI, vmin_charge,
+                                                               vmax_charge,
+                                                               save_name + '_TR_Corner',
+                                                               bias, band, foundry, PN_Type,
+                                                               wg_heights[1], wg_widths[1])
 
             # Set bool to false to allow for verifcation process to double check it is correct
             bool_charge = 0
@@ -885,6 +1375,21 @@ while True:
             slab_height_SI = round(slab_height*1e-9, 10)
             CouplingLength_SI = round(CouplingLength*1e-6, 10)
 
+            # Defining corner analysis range
+            if values['-CORNER_ANALYSIS-']:
+                wg_heights = [200e-9, 240e-9]
+                if band == 'CL':
+                    wg_widths = [450e-9, 550e-9]
+                else:
+                    wg_widths = [260-9, 360e-9]
+
+            # Defining nominal waveguide values
+            wg_height = 220e-9
+            if band == 'CL':
+                wg_width = 500e-9
+            else:
+                wg_width = 310-9
+
             # Gap is unique since it can be swept for critical coupling
             if bool_critical_couple == 1:
                 Gap_SI = np.linspace(100e-9, 600e-9, 11)
@@ -902,20 +1407,31 @@ while True:
                 # This executes a single iteration of the script
                 saved_results = sim.runSimulation(
                     Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                    LambdaStart, LambdaEnd, band, CHARGE_file, prop_loss)
+                    LambdaStart, LambdaEnd, band, CHARGE_file, prop_loss,
+                    wg_height, wg_width)
 
-            # Extracting results from saved_results class
-            CC = saved_results.CC
-            CC_f = saved_results.f
-            dNeff = saved_results.dNeff
-            T = saved_results.T
-            wavelength = saved_results.wavelength
-            wavelength = wavelength*1e9
-            phase_shift = saved_results.phase_shift
-            capacitance = saved_results.capacitance
-            resistance = saved_results.resistance
-            bandwidth = saved_results.bandwidth
-            voltage = phase_shift[0]
+            if values['-CORNER_ANALYSIS-']:
+                # Executing 4 extra simulations
+                # This executes a single iteration of the script
+                saved_results_BL = sim.runSimulation(
+                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                    LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                    wg_heights[0], wg_widths[0])
+                saved_results_BR = sim.runSimulation(
+                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                    LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                    wg_heights[0], wg_widths[1])
+                saved_results_TL = sim.runSimulation(
+                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                    LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                    wg_heights[1], wg_widths[0])
+                saved_results_TR = sim.runSimulation(
+                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                    LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                    wg_heights[1], wg_widths[1])
+
+                # If corner analysis was performed, the result windows are made visible
+                toggle_Corner_Analysis_Results(True)
 
             # Now that the data has been simulated we will plot it in the results tab.
             # Enabling result display buttons
@@ -927,77 +1443,31 @@ while True:
 
     elif event == '-CC-':
         # This event handles plotting the coupling coefficient i.e the power coupling coefficient
-
-        # Disable secondary inputs in case the user has previously selected a tab with them
-        disable_secondary_inputs()
-
-        # Enable PN junction plot option buttons
-        toggle_PN_Plot_Options(False)
-
-        # Creating Matplotlib figure
-        plt.figure(1)
-        plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Plotting power coupling results in figure
-        c = 299792458
-        wavl = [c/x/1e-9 for x in CC_f]
-        x = wavl
-        y = CC
-        plt.plot(x, y)
-        plt.title('Coupling Efficiency vs. Wavelength')
-        plt.xlabel('Wavelength [nm]')
-        plt.ylabel('Efficiency [%]')
-        plt.grid()
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
-
-        # Cleaning up text_results since they are not applicable here
-        update_text_results('', '', '', '', '')
+        if values['-NOMINAL-']:
+            plot_CC(saved_results, identifier='Nominal')
+        elif values['-CORNER_BL-']:
+            plot_CC(saved_results_BL, identifier='Bottom Left Corner')
+        elif values['-CORNER_BR-']:
+            plot_CC(saved_results_BR, identifier='Bottom Right Corner')
+        elif values['-CORNER_TL-']:
+            plot_CC(saved_results_TL, identifier='Top Left Corner')
+        elif values['-CORNER_TR-']:
+            plot_CC(saved_results_TR, identifier='Top Right Corner')
 
     elif event == '-NEFF-':
         # This event handles the dneff/voltage plot
-
-        # Disable secondary inputs in case the user has previously selected a tab with them
-        disable_secondary_inputs()
-
-        # Enable PN junction plot option buttons
-        toggle_PN_Plot_Options(False)
-
-        # Creating Matplotlib figure
-        plt.figure(1)
-        plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Plotting change in effective index plot
-        x = dNeff[0]
-        y1 = dNeff[1]
-        y2 = dNeff[2]
-        plt.plot(x, y1, label="Real")
-        plt.plot(x, y2, label="Imaginary")
-        plt.title('Delta Neff vs. Voltage')
-        plt.xlabel('Voltage [V]')
-        plt.ylabel('Delta Neff')
-        plt.legend(loc="upper right")
-        plt.grid()
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
-
-        # Cleaning up text_results since they are not applicable here
-        update_text_results('', '', '', '', '')
+        if values['-NOMINAL-']:
+            plot_NEFF(saved_results, identifier='Nominal')
+        elif values['-CORNER_BL-']:
+            plot_NEFF(saved_results_BL, identifier='Bottom Left Corner')
+        elif values['-CORNER_BR-']:
+            plot_NEFF(saved_results_BR, identifier='Bottom Right Corner')
+        elif values['-CORNER_TL-']:
+            plot_NEFF(saved_results_TL, identifier='Top Left Corner')
+        elif values['-CORNER_TR-']:
+            plot_NEFF(saved_results_TR, identifier='Top Right Corner')
 
     elif event == '-PN_RESULT-':
-        # This handles the phase shift plot
 
         # Disable secondary inputs in case the user has previously selected a tab with them
         disable_secondary_inputs()
@@ -1018,214 +1488,70 @@ while True:
         draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
 
     elif event == '-PHASE-':
-        # Creating Matplotlib figure
-        plt.figure(1)
-        plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Plotting change in effective index plot
-        x = phase_shift[0]
-        y1 = phase_shift[1]
-        plt.plot(x, y1, label="Phase")
-        plt.title('Phase Shift vs. Voltage')
-        plt.xlabel('Voltage [V]')
-        plt.ylabel('Phase [rads]')
-        plt.legend(loc="upper right")
-        plt.grid()
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
-
-        # Determining if Vpi has been resolved
-        max_shift = max(phase_shift[1])
-        if max_shift < math.pi:
-            result_str1 = 'Vpi was not resolved'
-        else:
-            indx = min(range(len(phase_shift[1])), key=lambda i: abs(phase_shift[1][i]-math.pi))
-            Vpi = phase_shift[0][indx]
-            result_str1 = "Vpi = " + str(Vpi) + " Volts"
-        # Updating result strings
-        update_text_results(result_str1, '', '', '', '')
+        # This handles the phase shift plot
+        if values['-NOMINAL-']:
+            plot_Phase(saved_results, identifier='Nominal')
+        elif values['-CORNER_BL-']:
+            plot_Phase(saved_results_BL, identifier='Bottom Left Corner')
+        elif values['-CORNER_BR-']:
+            plot_Phase(saved_results_BR, identifier='Bottom Right Corner')
+        elif values['-CORNER_TL-']:
+            plot_Phase(saved_results_TL, identifier='Top Left Corner')
+        elif values['-CORNER_TR-']:
+            plot_Phase(saved_results_TR, identifier='Top Right Corner')
 
     elif event == '-CAPACITANCE-':
-        # Creating Matplotlib figure
-        plt.figure(1)
-        plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Plotting change in effective index plot
-        x = voltage
-        capacitance_scaled = [x/1e-10 for x in capacitance]
-        y1 = capacitance_scaled
-        plt.plot(x, y1, label="Average Capacitance")
-        plt.title('Capacitance vs. Voltage')
-        plt.xlabel('Voltage [V]')
-        plt.ylabel('Capacitance [pf/cm]')
-        plt.legend(loc="upper right")
-        plt.grid()
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
-
-        # Updating result strings
-        update_text_results('', '', '', '', '')
+        # This handles the capacitance plot
+        if values['-NOMINAL-']:
+            plot_Capacitance(saved_results, identifier='Nominal')
+        elif values['-CORNER_BL-']:
+            plot_Capacitance(saved_results_BL, identifier='Bottom Left Corner')
+        elif values['-CORNER_BR-']:
+            plot_Capacitance(saved_results_BR, identifier='Bottom Right Corner')
+        elif values['-CORNER_TL-']:
+            plot_Capacitance(saved_results_TL, identifier='Top Left Corner')
+        elif values['-CORNER_TR-']:
+            plot_Capacitance(saved_results_TR, identifier='Top Right Corner')
 
     elif event == '-RESISTANCE-':
-        # Creating Matplotlib figure
-        plt.figure(1)
-        plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Plotting change in effective index plot
-        x = voltage
-        resistance_scaled = [x/100 for x in resistance]
-        y1 = resistance_scaled
-        plt.plot(x, y1, label="Average Resistance")
-        plt.title('Resistance vs. Voltage')
-        plt.xlabel('Voltage [V]')
-        plt.ylabel('Resistance [Ohm.cm]')
-        plt.legend(loc="upper right")
-        plt.grid()
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
-
-        # Updating result strings
-        update_text_results('', '', '', '', '')
+        # This handles the resistance plot
+        if values['-NOMINAL-']:
+            plot_Resistance(saved_results, identifier='Nominal')
+        elif values['-CORNER_BL-']:
+            plot_Resistance(saved_results_BL, identifier='Bottom Left Corner')
+        elif values['-CORNER_BR-']:
+            plot_Resistance(saved_results_BR, identifier='Bottom Right Corner')
+        elif values['-CORNER_TL-']:
+            plot_Resistance(saved_results_TL, identifier='Top Left Corner')
+        elif values['-CORNER_TR-']:
+            plot_Resistance(saved_results_TR, identifier='Top Right Corner')
 
     elif event == '-BANDWIDTH-':
-        # Creating Matplotlib figure
-        plt.figure(1)
-        plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Plotting change in effective index plot
-        x = voltage
-        capacitance_scaled = [x/1e-10 for x in capacitance]
-        resistance_scaled = [x/100 for x in resistance]
-        bandwidth_scaled = [1/(2*math.pi*x*y)/1e-12/1e9 for x,
-                            y in zip(resistance_scaled, capacitance_scaled)]
-
-        y1 = bandwidth_scaled
-        plt.plot(x, y1, label="Average Bandwidth")
-        plt.title('Bandwidth vs. Voltage')
-        plt.xlabel('Voltage [V]')
-        plt.ylabel('Bandwidth [GHz]')
-        plt.legend(loc="upper right")
-        plt.grid()
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
-
-        # Updating result strings
-        update_text_results('', '', '', '', '')
+        # This handles the bandwidth plot
+        if values['-NOMINAL-']:
+            plot_Bandwidth(saved_results, identifier='Nominal')
+        elif values['-CORNER_BL-']:
+            plot_Bandwidth(saved_results_BL, identifier='Bottom Left Corner')
+        elif values['-CORNER_BR-']:
+            plot_Bandwidth(saved_results_BR, identifier='Bottom Right Corner')
+        elif values['-CORNER_TL-']:
+            plot_Bandwidth(saved_results_TL, identifier='Top Left Corner')
+        elif values['-CORNER_TR-']:
+            plot_Bandwidth(saved_results_TR, identifier='Top Right Corner')
 
     elif event == '-T-':
         # This event handels the transmission spectra plotting
-
-        # Disable secondary inputs in case the user has previously selected a tab with them
-        disable_secondary_inputs()
-
-        # Enable PN junction plot option buttons
-        toggle_PN_Plot_Options(False)
-
-        # Creating Matplotlib figure
-        plt.figure(1)
-        plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Plotting transmission spectra and shift w.r.t voltage
-        V = dNeff[0]
-        dV = abs(V[len(V)-1] - V[0])/(len(V)-1)
-        for i in range(len(T)):
-            plt.plot(wavelength, T[i, :])
-
-        plt.title('Transmission Spectra for V= ' +
-                  str(V[0]) + " to " + str(V[len(V)-1]) + "in steps of " + str(dV))
-        plt.xlabel('Wavleength [nm]')
-        plt.ylabel('Transmission [dB]')
-        plt.legend(loc="upper right")
-        plt.grid()
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
-
-        # Extracting FOMs to display to user
-
-        # Isolating non biased data, aka 0V
-        non_biased_T = T[0, :]
-
-        # Solving list of resonances
-        height = 0.01
-        [indx, peaks] = find_peaks(-1*non_biased_T, height)
-        plt.plot(wavelength[indx], non_biased_T[indx], "x")
-        resonance_list = wavelength[indx]
-        result1_str = 'Resonance [nm]: [ '
-        for i in range(len(resonance_list)):
-            result1_str = result1_str + str(round(resonance_list[i], 3)) + ', '
-        result1_str = result1_str + ']'
-        result1_str = textwrap.wrap(result1_str, 40)
-
-        # Solving list of FSRs
-        FSR_list = [0] * (len(resonance_list)-1)
-        result2_str = 'FSR [nm]: [ '
-        for i in range(len(FSR_list)):
-            FSR_list[i] = round(resonance_list[i+1]-resonance_list[i], 2)
-            result2_str = result2_str + str(FSR_list[i]) + ', '
-
-        result2_str = result2_str + ']'
-
-        # Solving list of 3dB bandwidths
-        three_dB_bandwidth = [0] * (len(resonance_list))
-        three_dB_line = [-3]*len(non_biased_T)
-        idx = np.argwhere(np.diff(np.sign(three_dB_line - non_biased_T))).flatten()
-        three_dB_intersections = wavelength[idx]
-        result3_str = '3 dB Bandwidth [nm]: [ '
-        for i in range(int(len(three_dB_intersections)/2)):
-            print(i)
-            three_dB_bandwidth[i] = round(
-                np.abs(three_dB_intersections[2*i+1] - three_dB_intersections[2*i]), 3)
-            result3_str = result3_str + str(three_dB_bandwidth[i]) + ', '
-
-        result3_str = result3_str + ']'
-
-        # Solving list of quality factors
-        Qfactor = resonance_list/three_dB_bandwidth
-        Qfactor = np.around(Qfactor, decimals=-2)
-        Qfactor = Qfactor.astype(int)
-        result4_str = 'Q: [ '
-        for i in range(len(Qfactor)):
-            result4_str = result4_str + str(Qfactor[i]) + ', '
-
-        result4_str = result4_str + ']'
-
-        # Getting insertion loss Results
-        result5_str = 'Insertion Loss [dB]: [ '
-        ILs = np.round(np.array(peaks['peak_heights']), 2)
-        result5_str = result5_str + str(ILs) + ' ]'
-
-        # Updating the displayed results
-        update_text_results(result1_str, result2_str, result3_str, result4_str, result5_str)
+        # This event handles the dneff/voltage plot
+        if values['-NOMINAL-']:
+            plot_T(saved_results, identifier='Nominal')
+        elif values['-CORNER_BL-']:
+            plot_T(saved_results_BL, identifier='Bottom Left Corner')
+        elif values['-CORNER_BR-']:
+            plot_T(saved_results_BR, identifier='Bottom Right Corner')
+        elif values['-CORNER_TL-']:
+            plot_T(saved_results_TL, identifier='Top Left Corner')
+        elif values['-CORNER_TR-']:
+            plot_T(saved_results_TR, identifier='Top Right Corner')
 
     elif event == '-NRZ-':
         # This event handles the NRZ eye diagram sub-simulation window
