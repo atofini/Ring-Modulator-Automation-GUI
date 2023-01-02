@@ -47,7 +47,8 @@ def calculate_coupling_coefficient(parameters, simulation_setup, **kwargs):
         # Gap override is passed from sweep function
         result = database.QueryCouplers(parameters.radius, gap,
                                         parameters.coupling_length, parameters.slab_height,
-                                        simulation_setup.Band)
+                                        simulation_setup.Band, parameters.wg_height,
+                                        parameters.wg_width)
 
         if result != []:
             # If matching record exists in the database, use that data
@@ -69,14 +70,15 @@ def calculate_coupling_coefficient(parameters, simulation_setup, **kwargs):
             # Now executing append query to  save the data
             database.WriteToCouplers(nextID, parameters.radius, gap,
                                      parameters.coupling_length, parameters.slab_height,
-                                     simulation_setup.Band, f, CC)
+                                     simulation_setup.Band, parameters.wg_height,
+                                     parameters.wg_width, f, CC)
             coupler_ID = nextID
 
     if not sweep:
         # No gap override present so using parameter class object to build entire coupler
         result = database.QueryCouplers(parameters.radius, parameters.gap,
                                         parameters.coupling_length, parameters.slab_height,
-                                        simulation_setup.Band, parameters.wg_height, 
+                                        simulation_setup.Band, parameters.wg_height,
                                         parameters.wg_width)
         if result != []:
             print("Database contains a coupling record for current ring parameters")

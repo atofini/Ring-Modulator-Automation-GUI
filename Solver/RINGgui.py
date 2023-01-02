@@ -1377,7 +1377,7 @@ while True:
 
             # Defining corner analysis range
             if values['-CORNER_ANALYSIS-']:
-                wg_heights = [200e-9, 240e-9]
+                wg_heights = [195e-9, 245e-9]
                 if band == 'CL':
                     wg_widths = [450e-9, 550e-9]
                 else:
@@ -1398,7 +1398,8 @@ while True:
                 saved_results = sim.CriticalCouplingAutomation(
                     Radius_SI, Gap_SI, slab_height_SI,
                     CouplingLength_SI, LambdaStart, LambdaEnd,
-                    band, CHARGE_file, prop_loss)
+                    band, CHARGE_file, prop_loss,
+                    wg_height, wg_width)
 
                 gap_box.update(str(round(saved_results.CriticalCoupleGap/1e-9)))
             else:
@@ -1412,26 +1413,64 @@ while True:
 
             if values['-CORNER_ANALYSIS-']:
                 # Executing 4 extra simulations
-                # This executes a single iteration of the script
-                saved_results_BL = sim.runSimulation(
-                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                    LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
-                    wg_heights[0], wg_widths[0])
-                saved_results_BR = sim.runSimulation(
-                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                    LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
-                    wg_heights[0], wg_widths[1])
-                saved_results_TL = sim.runSimulation(
-                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                    LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
-                    wg_heights[1], wg_widths[0])
-                saved_results_TR = sim.runSimulation(
-                    Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                    LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
-                    wg_heights[1], wg_widths[1])
+                if bool_critical_couple == 1:
+                    saved_results_BL = sim.CriticalCouplingAutomation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                        wg_heights[0], wg_widths[0])
+                    Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
+                else:
+                    saved_results_BL = sim.runSimulation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                        wg_heights[0], wg_widths[0])
+                if bool_critical_couple == 1:
+                    saved_results_BR = sim.CriticalCouplingAutomation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                        wg_heights[0], wg_widths[1])
+                    Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
+                else:
+                    saved_results_BR = sim.runSimulation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                        wg_heights[0], wg_widths[1])
+                if bool_critical_couple == 1:
+                    saved_results_TL = sim.CriticalCouplingAutomation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                        wg_heights[1], wg_widths[0])
+                    Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
+                else:
+                    saved_results_TL = sim.runSimulation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                        wg_heights[1], wg_widths[0])
+                if bool_critical_couple == 1:
+                    saved_results_TR = sim.CriticalCouplingAutomation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                        wg_heights[1], wg_widths[1])
+                    Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
+                else:
+                    saved_results_TR = sim.runSimulation(
+                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                        LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                        wg_heights[1], wg_widths[1])
 
                 # If corner analysis was performed, the result windows are made visible
                 toggle_Corner_Analysis_Results(True)
+
+                # Updating gap display box to show a range of gaps that could be needed for critical
+                # coupling based on the corner analysis results
+                critical_gaps = [Gap_BL, Gap_BR, Gap_TL, Gap_TR]
+                min_critical_gap = min(critical_gaps)
+                max_critical_gap = max(critical_gaps)
+                gap_box.update(str(min_critical_gap) + ' - ' + str(max_critical_gap))
+                sg.Popup(
+                    'Range of possible critical coupling gaps shown in gap display box'
+                    ' Bl = ' + str(Gap_BL) + ', BR = ' + str(Gap_BR) +
+                    ', Tl = ' + str(Gap_TL) + ', TR = ' + str(Gap_TR), keep_on_top=True)
 
             # Now that the data has been simulated we will plot it in the results tab.
             # Enabling result display buttons

@@ -570,7 +570,7 @@ def runEye(Eye_type, Vmax, Vmin, Laser_Wavl, Radius, CouplingLength, LambdaStart
 
 
 def CriticalCouplingAutomation(Radius, Gaps, Slab_Height, CouplingLength, LambdaStart, LambdaEnd,
-                               Band, CHARGE_file, prop_loss):
+                               Band, CHARGE_file, prop_loss, wg_height, wg_width):
     """
     Execute critical coupling automation.
 
@@ -615,10 +615,8 @@ def CriticalCouplingAutomation(Radius, Gaps, Slab_Height, CouplingLength, Lambda
     parameters.gap = Gaps
     parameters.slab_height = Slab_Height
     parameters.coupling_length = CouplingLength
-    if Band == 'CL':
-        parameters.wg_width = 0.5e-6
-    else:
-        parameters.wg_width = 0.35e-6
+    parameters.wg_height = wg_height
+    parameters.wg_width = wg_width
 
     # Populating simulation settings
     simulation_setup.lambda_start = LambdaStart
