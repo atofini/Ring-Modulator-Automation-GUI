@@ -1,7 +1,0 @@
-Ansys Lumerical 2021 R2.5 Charge Transport Solver Version 7.8.2885 (Windows 64bit)
- expires (month/day/year): 12/11/2023
-using config file: C:/Users/AlexTofini/AppData/Roaming/Lumerical/License.ini
-license host: research-lm2.ece.ubc.ca
-current time: Tue Dec 27 19:25:03 2022
-Running on host: DESKTOP-Q00GD8Q
-Running ldev file: C:\Program Files\Lumerical\v212\bin\device-engine-msmpi.exe C:/Users/AlexTofini/Documents/GitHub/Ring-Modulator-Automation-GUI/Solver/database/charge_AMF/ChargeSim.ldev -remote

@@ -1,0 +1,193 @@
+# Sweep parameter is charge filename and N++/P++ sizes
+file = "charge_convergence_ContactSize";
+save_file = 'BumperBigMeshRegion';
+Bumper = 2e-6;
+npp_widths = [100e-9,150e-9,200e-9,250e-9,300e-9,350e-9,400e-9,450e-9,500e-9,550e-9,600e-9,650e-9,700e-9,750e-9,800e-9,850e-9,900e-9,950e-9,1000e-9];
+
+ppp_widths = npp_widths;
+data_dir = pwd + "/ContactSize_Results/";
+
+
+for(ii=1:length(ppp_widths)){
+    switchtolayout;
+    
+    # Manually adding variables for convergence testing
+    Coupling_Length = 0;
+    Radius = 10e-6;
+    V_start = 0;
+    V_stop = 5;
+    N = 21;
+    Band = 'CL';
+    bias = 'Reverse';
+    wg_height = 220e-9;
+    wg_width = 500e-9;
+    slab_height = 90e-9;
+    p_width_slab = 0;
+    n_width_slab = 0;
+    pp_width = 300e-9;
+    np_width = 300e-9;
+    
+    
+    
+    
+    select("::model");
+    norm_length = 2*pi*Radius + 2*Coupling_Length;
+    
+    setanalysis('number of trial modes',10);
+    setanalysis('search','near n');
+    setanalysis('use max index',true);
+    setanalysis('calculate group index',true);
+    setanalysis("bent waveguide",1);
+    setanalysis("bend radius",Radius);
+    
+    
+    
+    
+    #Import charge density into np object in order to be able to calculate modification to refractive index.
+    select("np");
+    # Adding Charge profile, need to change directories for this
+    #cwd = pwd;
+    #charge_dir = cwd + "/Database/Charge";
+    #cd(charge_dir);
+    
+    importdataset(data_dir + file +  num2str(npp_widths(ii)) + ".mat");
+    #cd(cwd);
+    V = linspace(V_start,V_stop,N);
+    neff = matrix(length(V));
+    ng = matrix(length(V));
+    loss = matrix(length(V));
+    
+    select("FDE");
+    border_clearance = 50e-9;
+    set("x span",wg_width + p_width_slab + n_width_slab + pp_width + np_width + ppp_widths(ii) + npp_widths(ii) - 2*border_clearance);
+    
+    select('mesh');
+    set('x span', 1.5*wg_width);
+    set('y span', 1.5*wg_height);
+        
+    
+    select("wg");
+    set("x span",wg_width);
+    set("y span", wg_height);
+    set("y", wg_height/2);
+    
+    select("Pad_right");
+    set("x",wg_width/2 + n_width_slab + np_width + npp_widths(ii)/2);  
+    set("x span", npp_widths(ii));   
+    set("y", slab_height/2);
+    set("y span", slab_height);
+    
+    select("Bumper_right");
+    set("x",wg_width/2 + n_width_slab + np_width + npp_widths(ii) + Bumper/2);  
+    set("x span", Bumper);   
+    set("y", slab_height/2);
+    set("y span", slab_height);
+    
+    
+    select("Pad_left");
+    set("x",-wg_width/2 - p_width_slab - pp_width - ppp_widths(ii)/2);    
+    set("x span", ppp_widths(ii)); 
+    set("y", slab_height/2);
+    set("y span", slab_height);
+    
+    select("Bumper_left");
+    set("x",-wg_width/2 - p_width_slab - pp_width - ppp_widths(ii)-Bumper/2);    
+    set("x span", Bumper); 
+    set("y", slab_height/2);
+    set("y span", slab_height);
+    
+    select("Slab_right");
+    set("x",wg_width/2 + n_width_slab/2 + np_width/2); 
+    set("x span", n_width_slab + np_width); 
+    set("y", slab_height/2);
+    set("y span", slab_height);
+    
+    select("Slab_left");
+    set("x",-wg_width/2 - p_width_slab/2 - pp_width/2);    
+    set("x span", p_width_slab + pp_width); 
+    set("y", slab_height/2);
+    set("y span", slab_height);
+    
+    
+    
+    
+    # Executing the sweep first so I have to set the wavelength ranges
+    if (Band == 'CL'){
+        setanalysis('wavelength',1.5e-6);
+        setanalysis('stop wavelength',1.6e-6);
+    }else{
+        setanalysis('wavelength',1.26e-6);
+        setanalysis('stop wavelength',1.4e-6);
+    }
+    
+    findmodes;
+    selectmode(1); 
+    setanalysis("track selected mode", true);
+    setanalysis("detailed dispersion calculation", true);
+    setanalysis("store mode profiles while tracking", true);
+    setanalysis("bent waveguide",1);
+    setanalysis("bend radius",Radius);
+    frequencysweep;
+    f=getdata("frequencysweep","f_D");
+    #dataname = copydcard("frequencysweep");
+    #filename = "Waveguide_" + Waveguide_ID + ".ldf";
+    
+    # Saving to database directory 
+    switchtolayout;
+    
+    if (Band == 'CL'){
+        setanalysis('wavelength',1.55e-6);
+    }else{
+        setanalysis('wavelength',1.31e-6);
+    }
+    
+    
+    for(i=1; i<=N; i=i+1){
+        if (bias == "Forward"){
+            setnamed('np','V_PType_index',i);
+        }else{
+            setnamed('np','V_NType_index',i);
+        }
+        findmodes;
+        
+    
+    
+        neff(i) = getdata('mode1','neff');
+        ng(i) = getdata('mode1','ng');
+        loss(i) = getdata('mode1','loss');    
+    
+        
+        switchtolayout;
+    }
+    dneff = neff - neff(1); # relative change in index wrt. zero bias
+    
+    L = norm_length;
+    la0 = getnamed("MODE","wavelength"); # central wavelength
+    rel_phase = 2*pi*real(dneff)/la0*L; # phase change
+    
+    #Visualize some quantities of interest
+    #plot(V,real(neff),"Voltage (V)","effective index");
+    #plot(V,real(ng),"Voltage (V)","group index");
+    #plot(V,rel_phase,"Voltage (V)","Phase shift wrt. zero bias (rad.)");
+    #plot(V,loss/100,"Voltage (V)","loss (dB/cm)");
+    #plot(V,real(dneff),"Voltage (V)","dneff");
+    
+    # Save to files for import to INTERCONNECT
+    
+    neff_real = real(neff);
+    neff_imag = imag(neff);
+    
+    dneff_real = real(dneff);
+    dneff_imag = imag(dneff);
+    
+    ng_real = real(ng);
+    ng_imag = imag(ng);
+    phase = rel_phase;
+    
+    # Saving to matlab file
+    current_dir = pwd;
+    result_dir = current_dir + "/Waveguide_Results";
+    cd(result_dir);
+    matlabsave(save_file + num2str(ii+17), neff_real,neff_imag,dneff_real,dneff_imag,ng_real,ng_imag,phase);    
+    cd(current_dir);
+}

@@ -159,6 +159,8 @@ class charge_params():
             foundry : str
                 Foundry control for the PN-junction definition.
                 Options: [AMF, AIM].
+            doping_error : float
+                Percentage error allowed for all doping concentrations
         """
         self.vmin = 0
         self.vmax = 0
@@ -176,6 +178,7 @@ class charge_params():
         self.PN_type = ''
         self.bias = ''
         self.foundry = ''
+        self.doping_error = 0
 
 # %% saved results class constructor
 
@@ -358,7 +361,7 @@ def runSimulation(Radius, Gap, Slab_Height, CouplingLength, LambdaStart, LambdaE
 def runPNJunctionSimulator(p_width_core, n_width_core, p_width_slab, n_width_slab,
                            pp_width, np_width, ppp_width, npp_width, slab_height,
                            radius, coupling_length, vmin, vmax, save_name, bias,
-                           band, foundry, PN_type, wg_height, wg_width):
+                           band, foundry, PN_type, wg_height, wg_width, doping_error=0):
     """
     Execute CHARGE simulation process for defined PN-junction.
 
@@ -416,6 +419,8 @@ def runPNJunctionSimulator(p_width_core, n_width_core, p_width_slab, n_width_sla
         Height of waveguide
     wg_width : float
         Width of waveguide
+    doping_error : float [Optional]
+        Percentage error rate for the doping concentrations in the PN junction. Default = 0
 
     Returns
     -------
@@ -459,6 +464,7 @@ def runPNJunctionSimulator(p_width_core, n_width_core, p_width_slab, n_width_sla
     charge_setup.PN_type = PN_type
     charge_setup.bias = bias
     charge_setup.foundry = foundry
+    charge_setup.doping_error = doping_error
 
     # Executing simulation depending on PN junction type
     if PN_type == 'Lateral':

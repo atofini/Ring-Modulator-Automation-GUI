@@ -41,7 +41,8 @@ def simulateForAMF(parameters, simulation_setup, charge_setup):
                                       charge_setup.pp_width, charge_setup.np_width,
                                       charge_setup.ppp_width, charge_setup.npp_width,
                                       charge_setup.vmin, charge_setup.vmax, charge_setup.bias,
-                                      simulation_setup.Band, charge_setup.foundry)
+                                      simulation_setup.Band, charge_setup.foundry,
+                                      charge_setup.doping_error)
     if result != []:
         # If matching record exists, use the results
         print("Database contains a record for current PN Junction")
@@ -74,7 +75,7 @@ def simulateForAMF(parameters, simulation_setup, charge_setup):
                                  charge_setup.vmax, charge_setup.charge_datapoints,
                                  charge_setup.bias, simulation_setup.Band,
                                  charge_setup.foundry, capacitance_avg, resistance_avg,
-                                 bandwidth_avg)
+                                 bandwidth_avg, charge_setup.doping_error)
 
         # Cleaning up charge database temporary save files
         cwd = os.getcwd()

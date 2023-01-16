@@ -208,20 +208,14 @@ def CheckGap(x0, y0, values, graph, gap_text, gap_warning, drawing_radius, drawi
     return bool_gap, Gap, gap_text
 
 
-def CheckSlab(x0, y0, values, graph, slab_warning):
+def CheckSlab(values, slab_warning):
     """
     Check the user specified slab height for errors.
 
     Parameters
     ----------
-    x0 : float
-        x coordinate for center point of ring.
-    y0 : float
-        y coordinate for center point of ring.
     values : dictionary
         Dictionairy containing all the values present in the GUI.
-    graph : TKcanvas
-        TKcanvas graph object.
     slab_warning : str
         Warning message for user if slab height is incorrectly specified.
 
@@ -270,6 +264,117 @@ def CheckSlab(x0, y0, values, graph, slab_warning):
         slab_warning.Update('Warning Message: Invalid Slab Height', visible=True)
 
     return bool_slab, slab_height
+
+
+def CheckWaveguideHeight(values, wg_height_warning):
+    """
+    Check the user specified waveguide height for errors.
+
+    Parameters
+    ----------
+    values : dictionary
+        Dictionairy containing all the values present in the GUI.
+    wg_height_warning : str
+        Warning message for user if slab height is incorrectly specified.
+
+    Returns
+    -------
+    bool_wg_height : int
+        Boolean tracker used to determine if waveguide height is correctly specified
+    wg_height : float
+        Wavegyude height.
+
+    """
+    # Initialize waveguide height
+    wg_height = None
+
+    # Attempt to convert value inside slab height textbox to float
+    try:
+        # Checking if slab heighth box is not empty
+        if values['-WAVEGUIDE_HEIGHT-'] != '':
+            # Populating slab height
+            wg_height = float(values['-WAVEGUIDE_HEIGHT-'])
+
+            if wg_height <= 0:
+                # Boolean tracker set to 0 and add warning for invalid waveguide height
+                bool_wg_height = 0
+                wg_height_warning.Update(
+                    'Warning Message: Waveguide Height must be > 0 nm', visible=True)
+
+            else:
+                print("Saving wg_height as:" + str(wg_height))
+                # Setting the boolean tracker to 1 and removing any warnings
+                bool_wg_height = 1
+                wg_height_warning.Update('Warning Message: ', visible=False)
+
+        else:
+            # Setting boolean tracker to 0 and adding warning that waveguide height is not specified
+            bool_wg_height = 0
+            wg_height_warning.Update(
+                'Warning Message: Waveguide Height Not Specified', visible=True)
+
+    # If convertion to float fails, instruct user to fix error
+    except ValueError:
+        # Boolean tracker set to 0 and add warning for invalid waveguide height
+        bool_wg_height = 0
+        wg_height_warning.Update('Warning Message: Invalid Waveguide Height', visible=True)
+
+    return bool_wg_height, wg_height
+
+
+def CheckWaveguideWidth(values, wg_width_warning):
+    """
+    Check the user specified waveguide height for errors.
+
+    Parameters
+    ----------
+    values : dictionary
+        Dictionairy containing all the values present in the GUI.
+    wg_width_warning : str
+        Warning message for user if waveguide width is incorrectly specified.
+
+    Returns
+    -------
+    bool_wg_width : int
+        Boolean tracker used to determine if waveguide height is correctly specified
+    wg_width : float
+        Wavegyude height.
+
+    """
+    # Initialize waveguide width
+    wg_width = None
+
+    # Attempt to convert value inside slab height textbox to float
+    try:
+        # Checking if slab heighth box is not empty
+        if values['-WAVEGUIDE_WIDTH-'] != '':
+            # Populating slab height
+            wg_width = float(values['-WAVEGUIDE_WIDTH-'])
+
+            if wg_width <= 0:
+                # Boolean tracker set to 0 and add warning for invalid waveguide width
+                bool_wg_width = 0
+                wg_width_warning.Update(
+                    'Warning Message: Waveguide Width must be > 0 nm', visible=True)
+            else:
+                print("Saving wg_width as:" + str(wg_width))
+                # Setting the boolean tracker to 1 and removing any warnings
+                bool_wg_width = 1
+                wg_width_warning.Update('Warning Message: ', visible=False)
+
+        else:
+            # Setting boolean tracker to 0 and adding warning that waveguide width is not specified
+            bool_wg_width = 0
+            wg_width_warning.Update(
+                'Warning Message: Waveguide Width Not Specified', visible=True)
+
+    # If convertion to float fails, instruct user to fix error
+    except ValueError:
+        # Boolean tracker set to 0 and add warning for invalid waveguide width
+        bool_wg_width = 0
+        wg_width.Update('Warning Message: Invalid Waveguide Width', visible=True)
+
+    return bool_wg_width, wg_width
 
 
 def CheckCouplingLength(x0, y0, values, graph, coupling_length_text, coupling_length_line,
@@ -1385,9 +1490,259 @@ def CheckChargeFile(values, charge_file_warning, bool_define_charge):
     return bool_load_charge, file
 
 
-def check_for_corner_analysis_charge(values):
+def check_for_variability_analysis(values, corner_analysis_warning):
     """
     Check if selected charge file is valid.
+
+    Parameters
+    ----------
+    values : dictionary
+        Dictionairy containing all the values present in the GUI.
+    corner_analysis_warning: int
+        Warning message to instruct the user to finish providing variability information
+    Returns
+    -------
+    bool_variability : int
+        Boolean tracker that determined if variability analysis should be performed
+    corner_analysis_warning : str
+        Warning message to instruct the user to finish providing variability information
+    """
+    bool_variability = 0
+
+    if values['-CORNER_ANALYSIS-']:
+        bool_variability = 1
+        corner_analysis_warning.Update('Go to Variability Analysis Tab', visible=True)
+
+    return bool_variability
+
+
+# =============================================================================
+# def check_variability_range(values, Variability_Dict,
+#                             wg_height_range_warning,
+#                             wg_width_range_warning,
+#                             slab_height_range_warning,
+#                             doping_concentration_range_warning):
+# =============================================================================
+def check_variability_range(values, Variability_Dict):
+    """
+    Check variability analysis ranges and verifiy inputs.
+
+    Parameters
+    ----------
+    values : dictionary
+        Dictionairy containing all the values present in the GUI.
+    wg_height_range_warning : str
+        Warning message for waveguide height range.
+    wg_width_range_warning : str
+        Warning message for waveguide width range.
+    slab_height_range_warning : str
+        Warning message for slab height range.
+    doping_concentration_range_warningg : str
+        Warning message for doping concentration range.
+
+    Returns
+    -------
+    Variability_Dict : dictionary
+        Dictionary containing all variability analysis information
+    """
+
+    # Attempt to convert value inside waveguide height error textbox to float
+    if values['-VARIABILITY_WAVEGUIDE_HEIGHT-']:
+        try:
+            if values['-WAVEGUIDE_HEIGHT_RANGE-'] != '':
+                # Populating waveguide height range
+                wg_height_range = float(values['-WAVEGUIDE_HEIGHT_RANGE-'])
+                if wg_height_range <= 0:
+                    # Boolean tracker set to 0 here also and invalid waveguide height range
+                    # warning added
+                    Variability_Dict['Waveguide Height Warning'].Update(
+                        'Warning Message: Range must be positive', visible=True)
+                else:
+                    print("Saving wg_height_range as:" + str(wg_height_range))
+                    Variability_Dict['Waveguide Height Range'] = wg_height_range
+
+                    # Setting boolean tracker to 1 and removing any warnings
+                    Variability_Dict['Waveguide Height Warning'].Update(
+                        'Warning Message: ', visible=False)
+            else:
+                # Setting boolean tracker to 0 and adding warning that waveguide height range
+                # is not specified
+                Variability_Dict['Waveguide Height Warning'].Update(
+                    'Warning Message: Range Not Specified', visible=True)
+
+        # If convertion to float fails, instruct user to fix error
+        except ValueError:
+            # Boolean tracker set to 0 here also and invalid waveguide height range warning added
+            Variability_Dict['Waveguide Height Warning'].Update(
+                'Warning Message: Invalid Range', visible=True)
+
+    if values['-VARIABILITY_WAVEGUIDE_WIDTH-']:
+        # Attempt to convert value inside waveguide width error textbox to float
+        try:
+            if values['-WAVEGUIDE_WIDTH_RANGE-'] != '':
+                # Populating waveguide width range
+                wg_width_range = float(values['-WAVEGUIDE_WIDTH_RANGE-'])
+                if wg_width_range <= 0:
+                    # Boolean tracker set to 0 here also and invalid waveguide width range
+                    # warning added
+                    Variability_Dict['Waveguide Width Warning'].Update(
+                        'Warning Message: Range must be positive', visible=True)
+                else:
+                    print("Saving wg_width_range as:" + str(wg_width_range))
+                    Variability_Dict['Waveguide Width Range'] = wg_width_range
+
+                    # Setting boolean tracker to 1 and removing any warnings
+                    Variability_Dict['Waveguide Width Warning'].Update(
+                        'Warning Message: ', visible=False)
+            else:
+                # Setting boolean tracker to 0 and adding warning that waveguide width range
+
+                Variability_Dict['Waveguide Width Warning'].Update(
+                    'Warning Message: Range Not Specified', visible=True)
+
+        # If convertion to float fails, instruct user to fix error
+        except ValueError:
+            # Boolean tracker set to 0 here also and invalid waveguide width range warning added
+            Variability_Dict['Waveguide Width Warning'].Update(
+                'Warning Message: Invalid Range', visible=True)
+
+    if values['-VARIABILITY_SLAB_HEIGHT-']:
+        # Attempt to convert value inside slab height error textbox to float
+        try:
+            if values['-SLAB_HEIGHT_RANGE-'] != '':
+                # Populating slab height range
+                slab_height_range = float(values['-SLAB_HEIGHT_RANGE-'])
+                if slab_height_range <= 0:
+                    # Boolean tracker set to 0 here also and invalid slab height range
+                    # warning added
+                    Variability_Dict['Slab Height Warning'].Update(
+                        'Warning Message: Range must be positive', visible=True)
+                else:
+                    print("Saving wg_height_range as:" + str(slab_height_range))
+                    Variability_Dict['Slab Height Range'] = slab_height_range
+
+                    # Setting boolean tracker to 1 and removing any warnings
+                    Variability_Dict['Slab Height Warning'].Update(
+                        'Warning Message: ', visible=False)
+            else:
+                # Setting boolean tracker to 0 and adding warning that slab height range
+                # is not specified
+                Variability_Dict['Slab Height Warning'].Update(
+                    'Warning Message: Range Not Specified', visible=True)
+
+        # If convertion to float fails, instruct user to fix error
+        except ValueError:
+            # Boolean tracker set to 0 here also and invalid slab height range warning added
+            Variability_Dict['Slab Height Warning'].Update(
+                'Warning Message: Invalid Range', visible=True)
+
+    if values['-VARIABILITY_DOPING_CONCENTRATION-']:
+        # Attempt to convert value inside doping concentration error textbox to float
+        try:
+            if values['-DOPING_CONCENTRATION_RANGE-'] != '':
+                # Populating waveguide height range
+                doping_range = float(values['-DOPING_CONCENTRATION_RANGE-'])
+                if doping_range <= 0:
+                    # Boolean tracker set to 0 here also and invalid waveguide height range
+                    # warning added
+                    Variability_Dict['Doping Concentration Warning'].Update(
+                        'Warning Message: Range must be positive', visible=True)
+                else:
+                    print("Saving doping_concentration_range as:" + str(doping_range))
+                    Variability_Dict['Doping Concentration Range'] = doping_range
+
+                    # Setting boolean tracker to 1 and removing any warnings
+                    Variability_Dict['Doping Concentration Warning'].Update(
+                        'Warning Message: ', visible=False)
+            else:
+                # Setting boolean tracker to 0 and adding warning that waveguide height range
+                # is not specified
+                Variability_Dict['Doping Concentration Warning'].Update(
+                    'Warning Message: Range Not Specified', visible=True)
+
+        # If convertion to float fails, instruct user to fix error
+        except ValueError:
+            # Boolean tracker set to 0 here also and invalid waveguide height range warning added
+            Variability_Dict['Doping Concentration Warning'].Update(
+                'Warning Message: Invalid Range', visible=True)
+
+    return Variability_Dict
+
+
+def update_variability(values, Variability_Dict, selected_dimensions,
+                       corner_analysis_warning, desired_dimensions=2):
+    """
+    Update selected variables for variability analysis and return display text.
+
+    Parameters
+    ----------
+    values : dictionary
+        Dictionairy containing all the values present in the GUI.
+    wg_height_range_warning : string
+    Variability_Dict : dict
+        Dictionairy containing all variability set up information
+    selected_dimensions : int
+        Number of selected dimensions in the variability analysis.
+    desired_dimensions : int [optional]
+        Desired number of dimensions in the variability analysis. Default is 2 for now
+
+    Returns
+    -------
+    display_string : str
+        String used to display to the user which variables are used in the variability analysis.
+    bool_corner_analyis_ready : int
+        Boolean tracker to determine if the variability analysis has been set up properly
+    """
+    # Combing through booleans
+    display_string = ('Current Selected Variability Analysis Settings: \n')
+    Displayed = []
+    bool_corner_analyis_ready = 0
+    for ii in range(selected_dimensions):
+        for key in Variability_Dict:
+            if '[ID]' in key and key not in Displayed:
+                if Variability_Dict[key]:
+                    Name = key.replace('[ID] ', '')
+                    Range_key = Name + ' Range'
+                    Range = Variability_Dict[Range_key]
+                    Units_key = Name + ' Units'
+                    Units = Variability_Dict[Units_key]
+                    if Range != 0:
+                        display_string += Name + ' +- ' + str(Range) + ' ' + Units + '\n'
+                        Displayed.append(key)
+                    break
+
+    if len(Displayed) == desired_dimensions:
+        bool_corner_analyis_ready = 1
+        corner_analysis_warning.Update('', visible=False)
+# =============================================================================
+# =============================================================================
+# # Combing through booleans
+# Displayed = [0, 0, 0, 0]
+# Settings = ['', '']
+# Info = ['Waveguide Height +-',
+#         'Waveguide Width +-',
+#         'Slab Height +-',
+#         'Doping Concentration +-']
+# Units = ['nm', 'nm', 'nm', '%']
+# =============================================================================
+#     for ii in range(selected_dimensions):
+#         for jj in range(len(Options)):
+#             if Options[jj] and not Displayed[jj]:
+#                 Settings[ii] = Info[jj] + str(Ranges[jj]) + str(Units[jj])
+#                 Displayed[jj] = 1
+#                 break
+# =============================================================================
+# =============================================================================
+#     display_string = ('Current Selected Variability Analysis Settings: '
+#                       + str(Settings[0]) + ' & ' + str(Settings[1]))
+# =============================================================================
+
+    return display_string, bool_corner_analyis_ready
+
+
+def check_for_variability_analysis_charge(values):
+    """
+    Check if PN junction simulations for varibility analysis are present.
 
     Parameters
     ----------
@@ -1498,8 +1853,8 @@ def check_secondary_inputs(values, CHARGE_file, laser_warning,
     charge_file = str(CHARGE_file).split('\\')[-1]
     charge_file = charge_file.split('.')[0]
     charge_query = database.QueryChargeFile(charge_file, foundry)
-    charge_vmin = charge_query[0][14]
-    charge_vmax = charge_query[0][15]
+    charge_vmin = charge_query[0][16]
+    charge_vmax = charge_query[0][17]
 
     # Poplating simulation wavelength range for laser crossreference
     # Keeping unit sthe same as the user inputs for the eye diagram window

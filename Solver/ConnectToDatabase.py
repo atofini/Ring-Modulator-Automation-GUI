@@ -271,7 +271,8 @@ def FindNextIndex(Table_name):
 
 def QueryChargeSims(PN_type, slab_height, wg_height, wg_width, radius, coupling_length,
                     p_width_core, n_width_core, p_width_slab, n_width_slab, pp_width,
-                    np_width, ppp_width, npp_width, v_min, v_max, bias, band, foundry):
+                    np_width, ppp_width, npp_width, v_min, v_max, bias, band, foundry,
+                    doping_error):
     """
     Query CHARGE tables for matching record.
 
@@ -319,6 +320,8 @@ def QueryChargeSims(PN_type, slab_height, wg_height, wg_width, radius, coupling_
     foundry : str
         Foundry that the PN junction is created for.
         Options : [AMF, AIM]
+    doping_error : float
+        Percentage doping error for all dopants
 
     Returns
     -------
@@ -341,10 +344,11 @@ def QueryChargeSims(PN_type, slab_height, wg_height, wg_width, radius, coupling_
             'AND (([Charge AMF Table].[P++_Width])=%s) AND (([Charge AMF Table].[N++_Width])=%s) '
             'AND (([Charge AMF Table].Min_Voltage)=%s) AND (([Charge AMF Table].Max_Voltage)=%s) '
             'AND (([Charge AMF Table].Bias)=\'%s\') '
-            'AND (([Charge AMF Table].Optical_Band)=\'%s\'));'
+            'AND (([Charge AMF Table].Optical_Band)=\'%s\') '
+            'AND (([Charge AMF Table].Doping_Error)=%s));'
         ) % (PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
              n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width,
-             v_min, v_max, bias, band)
+             v_min, v_max, bias, band, doping_error)
     elif foundry == 'AIM':
         sql = (
             'SELECT [Charge AIM Table].*'
@@ -364,10 +368,11 @@ def QueryChargeSims(PN_type, slab_height, wg_height, wg_width, radius, coupling_
             'AND (([Charge AIM Table].Min_Voltage)=%s) '
             'AND (([Charge AIM Table].Max_Voltage)=%s) '
             'AND (([Charge AIM Table].Bias)=\'%s\') '
-            'AND (([Charge AIM Table].Optical_Band)=\'%s\'));'
+            'AND (([Charge AIM Table].Optical_Band)=\'%s\') '
+            'AND (([Charge AIM Table].Doping_Error)=%s));'
         ) % (PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
              n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width, npp_width,
-             v_min, v_max, bias, band)
+             v_min, v_max, bias, band, doping_error)
 
     # Executing query and fetching results
     cursor.execute(sql)
@@ -416,7 +421,7 @@ def QueryChargeFile(charge_file, foundry):
 def WriteChargeSims(ID, PN_type, slab_height, wg_height, wg_width, radius, coupling_length,
                     p_width_core, n_width_core, p_width_slab, n_width_slab, pp_width, np_width,
                     ppp_width, npp_width, save_name, v_min, v_max, N, bias, band, foundry,
-                    capacitance, resistance, bandwidth):
+                    capacitance, resistance, bandwidth, doping_error):
     """
     Append query used to add a record to the CHARGE tables.
 
@@ -476,6 +481,8 @@ def WriteChargeSims(ID, PN_type, slab_height, wg_height, wg_width, radius, coupl
         List containing averaged resistance values v.s. voltage across ssac signal sweep
     bandwidth_avg : list
         List containing averaged bandwidth values v.s. voltage across ssac signal sweep
+    doping_error : float
+        Percentage doping error for all dopants
 
     Returns
     -------
@@ -488,32 +495,34 @@ def WriteChargeSims(ID, PN_type, slab_height, wg_height, wg_width, radius, coupl
             'Waveguide_Width, Radius, '
             'Coupling_Length, P_Width_Core, N_Width_Core, P_Width_Slab, N_Width_Slab, '
             '[P+_Width], [N+_Width], [P++_Width], [N++_Width], Filename, Min_Voltage, Max_Voltage, '
-            'N, Bias, Optical_Band, Capacitance, Resistance, Bandwidth )'
+            'N, Bias, Optical_Band, Capacitance, Resistance, Bandwidth, Doping_Error )'
             'SELECT %s AS Expr1, \'%s\' AS Expr2, %s AS Expr3, %s AS Expr4, %s AS Expr5, '
             '%s AS Expr6, %s AS Expr7, '
             '%s AS Expr8, %s AS Expr9, %s AS Expr10, %s AS Expr11, %s AS Expr12, %s AS Expr13, '
             '%s AS Expr14, %s AS Expr15, \'%s\' AS Expr16, %s AS Expr17, %s AS Expr18, '
             '%s AS Expr19, \'%s\' AS Expr20, \'%s\' AS Expr21, \'%s\' AS Expr22, \'%s\' AS Expr23, '
-            '\'%s\' AS Expr24;'
+            '\'%s\' AS Expr24, %s AS Expr25;'
         ) % (ID, PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
              n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width,
-             npp_width, save_name, v_min, v_max, N, bias, band, capacitance, resistance, bandwidth)
+             npp_width, save_name, v_min, v_max, N, bias, band, capacitance, resistance, bandwidth,
+             doping_error)
     elif foundry == 'AIM':
         sql = (
             'INSERT INTO [Charge AIM Table] ( Charge_ID, Type, Slab_Height, Waveguide_Height, '
             'Waveguide_Width, Radius, '
             'Coupling_Length, P1Al_Width_Core, N1Al_Width_Core, P1Al_Width_Slab, N1Al_Width_Slab, '
             'P4Al_Width, N3Al_Width, P5Al_Width, N5Al_Width, Filename, Min_Voltage, Max_Voltage, '
-            'N, Bias, Optical_Band, Capacitance, Resistance, Bandwidth )'
+            'N, Bias, Optical_Band, Capacitance, Resistance, Bandwidth, Doping_Error )'
             'SELECT %s AS Expr1, \'%s\' AS Expr2, %s AS Expr3, %s AS Expr4, %s AS Expr5, '
             '%s AS Expr6, %s AS Expr7, '
             '%s AS Expr8, %s AS Expr9, %s AS Expr10, %s AS Expr11, %s AS Expr12, %s AS Expr13, '
             '%s AS Expr14, %s AS Expr15, \'%s\' AS Expr16, %s AS Expr17, %s AS Expr18, '
             '%s AS Expr19, \'%s\' AS Expr20, \'%s\' AS Expr21, \'%s\' AS Expr22, \'%s\' AS Expr23, '
-            '\'%s\' AS Expr24;'
+            '\'%s\' AS Expr24, %s AS Expr25;'
         ) % (ID, PN_type, slab_height, wg_height, wg_width, radius, coupling_length, p_width_core,
              n_width_core, p_width_slab, n_width_slab, pp_width, np_width, ppp_width,
-             npp_width, save_name, v_min, v_max, N, bias, band, capacitance, resistance, bandwidth)
+             npp_width, save_name, v_min, v_max, N, bias, band, capacitance, resistance, bandwidth,
+             doping_error)
     cursor.execute(sql)
     cursor.commit()
     return

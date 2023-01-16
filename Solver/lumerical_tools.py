@@ -294,10 +294,10 @@ def run_charge(parameters, simulation_setup, charge_params, close=True):
                        simulation_setup.Band, parameters.wg_height, parameters.wg_width))
 
     # Passing in charge settings
-    command = "v_min = %s; v_max =%s; N =%s; bias = '%s'; save_name = '%s';"
+    command = "v_min = %s; v_max =%s; N =%s; bias = '%s'; save_name = '%s'; doping_error = %s;"
     lumapi.evalScript(device, command
                       % (charge_params.vmin, charge_params.vmax, charge_params.charge_datapoints,
-                         charge_params.bias, charge_params.save_name))
+                         charge_params.bias, charge_params.save_name, charge_params.doping_error))
 
     # Select and use PN junction build script depending on foundry and PN type
     if charge_params.foundry == 'AMF':

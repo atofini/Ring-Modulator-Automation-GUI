@@ -16,43 +16,14 @@ import InputVerification as verify
 import Draw as draw
 import ConnectToDatabase as database
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import math
-
+import matplotlib
+from pathlib import Path
+# Setting the interactive plot window
+matplotlib.use('TkAgg')
 
 # set the theme for the screen/window
 sg.theme("DarkTanBlue")
-
-
-def draw_figure_w_toolbar(canvas, fig, canvas_toolbar):
-    """
-    Generate user-interactable plot window with toolbar.
-
-    Parameters
-    ----------
-    canvas : TKcanvas window
-        TKcanvas used to replace matplotlib figure.
-    fig : Matplotlib Figure
-        Matplotlib figure to use as base.
-    canvas_toolbar : TKcanvas controls
-        TKcanvas toolbar object associated with canvas.
-
-    Returns
-    -------
-    None.
-
-    """
-    if canvas.children:
-        for child in canvas.winfo_children():
-            child.destroy()
-    if canvas_toolbar.children:
-        for child in canvas_toolbar.winfo_children():
-            child.destroy()
-    figure_canvas_agg = FigureCanvasTkAgg(fig, master=canvas)
-    figure_canvas_agg.draw()
-    toolbar = Toolbar(figure_canvas_agg, canvas_toolbar)
-    toolbar.update()
-    figure_canvas_agg.get_tk_widget().pack(side='right', fill='both', expand=1)
 
 
 def enable_result_buttons():
@@ -191,16 +162,10 @@ def plot_CC(saved_results, identifier='Nominal'):
     # Enable PN junction plot option buttons
     toggle_PN_Plot_Options(False)
 
-    # Creating Matplotlib figure
-    plt.figure(1)
-    plt.figure(1).clear()
-    fig = plt.gcf()
-    DPI = fig.get_dpi()
-
-    # Defining TKcanvas canvas size
-    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-    # Plotting power coupling results in figure
+    # Creating plot in separate window to reduce lag
+    fig = plt.figure(1)
+    fig.clear()
+    #  Plotting power coupling results in figure
     CC = saved_results.CC
     CC_f = saved_results.f
     c = 299792458
@@ -212,9 +177,8 @@ def plot_CC(saved_results, identifier='Nominal'):
     plt.xlabel('Wavelength [nm]')
     plt.ylabel('Efficiency [%]')
     plt.grid()
-
-    # Converting figure to canvas plot
-    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+    fig = plt.gcf()
+    fig.canvas.manager.window.attributes('-topmost', 1)
 
     # Cleaning up text_results since they are not applicable here
     update_text_results('', '', '', '', '')
@@ -238,11 +202,6 @@ def plot_NEFF(saved_results, identifier='Nominal'):
     # Creating Matplotlib figure
     plt.figure(1)
     plt.figure(1).clear()
-    fig = plt.gcf()
-    DPI = fig.get_dpi()
-
-    # Defining TKcanvas canvas size
-    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
 
     # Plotting change in effective index plot
     dNeff = saved_results.dNeff
@@ -256,9 +215,8 @@ def plot_NEFF(saved_results, identifier='Nominal'):
     plt.ylabel('Delta Neff')
     plt.legend(loc="upper right")
     plt.grid()
-
-    # Converting figure to canvas plot
-    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+    fig = plt.gcf()
+    fig.canvas.manager.window.attributes('-topmost', 1)
 
     # Cleaning up text_results since they are not applicable here
     update_text_results('', '', '', '', '')
@@ -282,16 +240,11 @@ def plot_T(saved_results, identifier='Nominal'):
     # Creating Matplotlib figure
     plt.figure(1)
     plt.figure(1).clear()
-    fig = plt.gcf()
-    DPI = fig.get_dpi()
-
-    # Defining TKcanvas canvas size
-    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
 
     # Plotting transmission spectra and shift w.r.t voltage
     dNeff = saved_results.dNeff
     wavelength = saved_results.wavelength
-    wavelength = wavelength*1e9
+    wavelength = wavelength  # *1e9
     T = saved_results.T
     V = dNeff[0]
     dV = abs(V[len(V)-1] - V[0])/(len(V)-1)
@@ -304,9 +257,8 @@ def plot_T(saved_results, identifier='Nominal'):
     plt.ylabel('Transmission [dB]')
     plt.legend(loc="upper right")
     plt.grid()
-
-    # Converting figure to canvas plot
-    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+    fig = plt.gcf()
+    fig.canvas.manager.window.attributes('-topmost', 1)
 
     # Extracting FOMs to display to user
 
@@ -378,11 +330,6 @@ def plot_Phase(saved_results, identifier='Nominal'):
     # Creating Matplotlib figure
     plt.figure(1)
     plt.figure(1).clear()
-    fig = plt.gcf()
-    DPI = fig.get_dpi()
-
-    # Defining TKcanvas canvas size
-    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
 
     # Plotting change in effective index plot
     phase_shift = saved_results.phase_shift
@@ -394,9 +341,8 @@ def plot_Phase(saved_results, identifier='Nominal'):
     plt.ylabel('Phase [rads]')
     plt.legend(loc="upper right")
     plt.grid()
-
-    # Converting figure to canvas plot
-    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+    fig = plt.gcf()
+    fig.canvas.manager.window.attributes('-topmost', 1)
 
     # Determining if Vpi has been resolved
     max_shift = max(phase_shift[1])
@@ -422,11 +368,6 @@ def plot_Capacitance(saved_results, identifier='Nominal'):
     # Creating Matplotlib figure
     plt.figure(1)
     plt.figure(1).clear()
-    fig = plt.gcf()
-    DPI = fig.get_dpi()
-
-    # Defining TKcanvas canvas size
-    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
 
     # Plotting change in effective index plot
     capacitance = saved_results.capacitance
@@ -441,9 +382,8 @@ def plot_Capacitance(saved_results, identifier='Nominal'):
     plt.ylabel('Capacitance [pf/cm]')
     plt.legend(loc="upper right")
     plt.grid()
-
-    # Converting figure to canvas plot
-    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+    fig = plt.gcf()
+    fig.canvas.manager.window.attributes('-topmost', 1)
 
     # Updating result strings
     update_text_results('', '', '', '', '')
@@ -461,11 +401,6 @@ def plot_Resistance(saved_results, identifier='Nominal'):
     # Creating Matplotlib figure
     plt.figure(1)
     plt.figure(1).clear()
-    fig = plt.gcf()
-    DPI = fig.get_dpi()
-
-    # Defining TKcanvas canvas size
-    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
 
     # Plotting change in effective index plot
     resistance = saved_results.resistance
@@ -480,9 +415,8 @@ def plot_Resistance(saved_results, identifier='Nominal'):
     plt.ylabel('Resistance [Ohm.cm]')
     plt.legend(loc="upper right")
     plt.grid()
-
-    # Converting figure to canvas plot
-    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+    fig = plt.gcf()
+    fig.canvas.manager.window.attributes('-topmost', 1)
 
     # Updating result strings
     update_text_results('', '', '', '', '')
@@ -500,11 +434,6 @@ def plot_Bandwidth(saved_results, identifier='Nominal'):
     # Creating Matplotlib figure
     plt.figure(1)
     plt.figure(1).clear()
-    fig = plt.gcf()
-    DPI = fig.get_dpi()
-
-    # Defining TKcanvas canvas size
-    fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
 
     # Plotting change in effective index plot
     capacitance = saved_results.capacitance
@@ -524,26 +453,11 @@ def plot_Bandwidth(saved_results, identifier='Nominal'):
     plt.ylabel('Bandwidth [GHz]')
     plt.legend(loc="upper right")
     plt.grid()
-
-    # Converting figure to canvas plot
-    draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+    fig = plt.gcf()
+    fig.canvas.manager.window.attributes('-topmost', 1)
 
     # Updating result strings
     update_text_results('', '', '', '', '')
-
-
-class Toolbar(NavigationToolbar2Tk):
-    """
-    Toolbar class definition built into TKcanvas.
-
-    Returns
-    -------
-    None.
-
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(Toolbar, self).__init__(*args, **kwargs)
 
 
 # Dimensions for drawing are hard coded as pixels and indifferent to physical provided size
@@ -611,6 +525,24 @@ main_tab = [
              text_color='yellow',
              visible=False,
              key='-COUPLING_LENGTH_WARNING-')],
+    [sg.Text('Waveguide Height [nm]:',
+             size=(spacing, 1)),
+     sg.Input(key='-WAVEGUIDE_HEIGHT-',
+              s=(box_size, 1)),
+     sg.Text('Warning Message: ',
+             size=(warning_size, 1),
+             text_color='yellow',
+             visible=False,
+             key='-WAVEGUIDE_HEIGHT_WARNING-')],
+    [sg.Text('Waveguide Width [nm]:',
+             size=(spacing, 1)),
+     sg.Input(key='-WAVEGUIDE_WIDTH-',
+              s=(box_size, 1)),
+     sg.Text('Warning Message: ',
+             size=(warning_size, 1),
+             text_color='yellow',
+             visible=False,
+             key='-WAVEGUIDE_WIDTH_WARNING-')],
     [sg.Text('Simulation Parameters',
              font='Helvitica 16 bold underline')],
     [sg.Radio('CL Band (1500-1600)nm',
@@ -626,11 +558,16 @@ main_tab = [
                  visible=True,
                  change_submits=True,
                  key='-CRITICAL_COUPLE-')],
-    [sg.Checkbox('Perform Corner Analysis (Width +- 50nm, Height +- 25nm)',
+    [sg.Checkbox('Perform Corner Analysis',
                  default=False,
                  visible=True,
                  change_submits=True,
-                 key='-CORNER_ANALYSIS-')],
+                 key='-CORNER_ANALYSIS-'),
+     sg.Text('Warning Message: ',
+             size=(warning_size, 1),
+             text_color='yellow',
+             visible=False,
+             key='-CORNER_ANALYSIS_WARNING-')],
     [sg.Text('Propagation Loss [dB/cm]'),
      sg.Input('2.5',
               s=(box_size, 1),
@@ -669,6 +606,8 @@ main_tab = [
      sg.Button("Run Simulation",
                visible=False,
                key='-RUN-')]
+
+
 ]
 
 # Creating elements on CHARGE window
@@ -826,6 +765,83 @@ charge_tab = [
                visible=False,
                key='-RUN_CHARGE-')]
 ]
+# Creating elements on the variability window
+sz = (10, 20)
+col1_color = 'grey',
+col2_color = 'green',
+col1 = [
+    [sg.Text("Select 2 Desired Variables & Specify Variability")],
+    [sg.Checkbox('Waveguide Height',
+                 default=False,
+                 visible=True,
+                 enable_events=True,
+                 key='-VARIABILITY_WAVEGUIDE_HEIGHT-'),
+     sg.Text('+- '),
+     sg.Input(key='-WAVEGUIDE_HEIGHT_RANGE-', s=(box_size, 1),
+              visible=True),
+     sg.Text(' [nm]'),
+     sg.Text('Warning Message: ',
+             size=(warning_size, 1),
+             text_color='yellow',
+             visible=False,
+             key='-WAVEGUIDE_HEIGHT_RANGE_WARNING-')
+     ],
+    [sg.Checkbox('Waveguide Width',
+                 default=False,
+                 visible=True,
+                 enable_events=True,
+                 key='-VARIABILITY_WAVEGUIDE_WIDTH-'),
+     sg.Text('+- '),
+     sg.Input(key='-WAVEGUIDE_WIDTH_RANGE-', s=(box_size, 1),
+              visible=True),
+     sg.Text(' [nm]'),
+     sg.Text('Warning Message: ',
+             size=(warning_size, 1),
+             text_color='yellow',
+             visible=False,
+             key='-WAVEGUIDE_WIDTH_RANGE_WARNING-')
+     ],
+    [sg.Checkbox('Slab Height',
+                 default=False,
+                 visible=True,
+                 enable_events=True,
+                 key='-VARIABILITY_SLAB_HEIGHT-'),
+     sg.Text('+- '),
+     sg.Input(key='-SLAB_HEIGHT_RANGE-', s=(box_size, 1),
+              visible=True),
+     sg.Text(' [nm]'),
+     sg.Text('Warning Message: ',
+             size=(warning_size, 1),
+             text_color='yellow',
+             visible=False,
+             key='-SLAB_HEIGHT_RANGE_WARNING-')
+     ],
+    [sg.Checkbox('Doping Cocentration % Error',
+                 default=False,
+                 visible=True,
+                 enable_events=True,
+                 key='-VARIABILITY_DOPING_CONCENTRATION-'),
+     sg.Text('+- '),
+     sg.Input(key='-DOPING_CONCENTRATION_RANGE-', s=(box_size, 1),
+              visible=True),
+     sg.Text(' [%]'),
+     sg.Text('Warning Message: ',
+             size=(warning_size, 1),
+             text_color='yellow',
+             visible=False,
+             key='-DOPING_CONCENTRATION_RANGE_WARNING-')
+     ],
+    [sg.Button('Update',
+               visible=True,
+               button_color=('black', 'green'),
+               key='-UPDATE_VARIABILITY-')],
+    [sg.Text("Current Selected Variability Analysis Settings:",
+             key='-CURRENT_VARIABLES-')],
+]
+
+
+variability_tab = [[sg.Column(col1, element_justification='c')]]
+
 # Creating elements on result window
 results_tab = [
     [sg.Radio('Nominal',
@@ -892,19 +908,21 @@ results_tab = [
                visible=False,
                button_color=('black', 'yellow'),
                key='-BANDWIDTH-')],
-    [sg.T('Controls:')],
-    [sg.Canvas(key='controls_cv')],
-    [sg.T('Figure:')],
-    [sg.Column(
-        layout=[
-            [sg.Canvas(key='fig_cv',
-                       # it's important that you set this size
-                       size=(400 * 2, 400)
-                       )]
-        ],
-        background_color='#DAE0E6',
-        pad=(0, 0)
-    )],
+    # =============================================================================
+    #     [sg.T('Controls:')],
+    #     [sg.Canvas(key='controls_cv')],
+    #     [sg.T('Figure:')],
+    #     [sg.Column(
+    #         layout=[
+    #             [sg.Canvas(key='fig_cv',
+    #                        # it's important that you set this size
+    #                        size=(400 * 2, 400)
+    #                        )]
+    #         ],
+    #         background_color='#DAE0E6',
+    #         pad=(0, 0)
+    #     )],
+    # =============================================================================
     [sg.Text('Placeholder text:',
              size=(100,
                    None),
@@ -978,6 +996,11 @@ tabgrp = [[sg.TabGroup([[sg.Tab('Simulation',
                                 border_width=10,
                                 tooltip='Personal details',
                                 element_justification='center'),
+                         sg.Tab('Variability Analysis',
+                                variability_tab, title_color='Blue',
+                                visible=False,
+                                key='-VARIABILITY_TAB-',
+                                element_justification='center'),
                          sg.Tab('CHARGE',
                                 charge_tab, title_color='Blue',
                                 visible=False,
@@ -1005,10 +1028,13 @@ graph_charge = window['-GRAPH_CHARGE-']
 radius_warning = window['-RADIUS_WARNING-']
 gap_warning = window['-GAP_WARNING-']
 slab_warning = window['-SLAB_WARNING-']
+wg_height_warning = window['-WAVEGUIDE_HEIGHT_WARNING-']
+wg_width_warning = window['-WAVEGUIDE_WIDTH_WARNING-']
 coupling_length_warning = window['-COUPLING_LENGTH_WARNING-']
 coupling_box = window['-COUPLING_LENGTH-']
 run_sim = window['-RUN-']
 charge_window = window['-CHARGE_TAB-']
+variability_window = window['-VARIABILITY_TAB-']
 results_window = window['-RESULTS_TAB-']
 charge_file = window['-CHARGE_FILE-']
 browse_button = window['-BROWSE-']
@@ -1016,6 +1042,7 @@ run_charge = window['-RUN_CHARGE-']
 corner_analysis = window['-CORNER_ANALYSIS-']
 propagation_loss_box = window['-PROP_LOSS-']
 propagation_loss_warning = window['-PROP_LOSS_WARNING-']
+corner_analysis_warning = window['-CORNER_ANALYSIS_WARNING-']
 gap_box = window['-GAP-']
 
 # Creating handles for result tabs
@@ -1038,6 +1065,21 @@ BL_plot = window['-CORNER_BL-']
 BR_plot = window['-CORNER_BR-']
 TL_plot = window['-CORNER_TL-']
 TR_plot = window['-CORNER_TR-']
+
+# Creating handles for variability checkboxes
+waveguide_height_var_box = window['-VARIABILITY_WAVEGUIDE_HEIGHT-']
+waveguide_width_var_box = window['-VARIABILITY_WAVEGUIDE_WIDTH-']
+slab_height_var_box = window['-VARIABILITY_SLAB_HEIGHT-']
+doping_concentration_var_box = window['-VARIABILITY_DOPING_CONCENTRATION-']
+
+# Creating handle for variability list text
+variability_variables_text = window['-CURRENT_VARIABLES-']
+
+# Creating handles for variability input warnings
+wg_height_range_warning = window['-WAVEGUIDE_HEIGHT_RANGE_WARNING-']
+wg_width_range_warning = window['-WAVEGUIDE_WIDTH_RANGE_WARNING-']
+slab_height_range_warning = window['-SLAB_HEIGHT_RANGE_WARNING-']
+doping_concentration_range_warning = window['-DOPING_CONCENTRATION_RANGE_WARNING-']
 
 
 # Creating handles for the scalar result displays
@@ -1162,6 +1204,23 @@ bool_define_charge = 0
 bool_charge_file = 0
 bool_charge_params = 0
 
+# Variability analysis booleans
+bool_variability = 0
+bool_waveguide_height_variability = 0
+bool_waveguide_width_variability = 0
+bool_slab_height_variability = 0
+bool_doping_concentration_variability = 0
+bool_corner_analyis_ready = 0
+
+# Creating Variability Dictionairy
+Variability_Dict = {}
+
+# Adding variability counter to limit simulation space to 2 currently
+variability_dimensions = 2
+selected_dimensions = 0
+setting1 = ''
+setting2 = ''
+
 # Secondary inputs
 bool_laser = 0
 bool_vmin = 0
@@ -1197,7 +1256,7 @@ while True:
             drawing_radius, drawing_gap, bool_critical_couple, gap_box)
 
         # Verifying slab height
-        bool_slab, slab_height = verify.CheckSlab(x0, y0, values, graph, slab_warning)
+        bool_slab, slab_height = verify.CheckSlab(values, slab_warning)
 
         # Verifying coupling length
         [bool_coupling_length, CouplingLength, circle, left_arc, right_arc, top_coupling,
@@ -1206,6 +1265,12 @@ while True:
             coupling_region, drawing_radius, coupling_length_warning, circle, top_coupling,
             bot_coupling, bus_width, left_arc, right_arc, radius_text, radius_line, radius_warning,
             bool_radius, bool_gap, Radius, coupling_box, bool_critical_couple)
+
+        # Verify waveguide height
+        bool_wg_height, wg_height = verify.CheckWaveguideHeight(values, wg_height_warning)
+
+        # Verify waveguide width
+        bool_wg_width, wg_width = verify.CheckWaveguideWidth(values, wg_width_warning)
 
         # Verifying optical band
         LambdaStart, LambdaEnd, band = verify.CheckBand(values)
@@ -1217,7 +1282,12 @@ while True:
         bool_load_charge, CHARGE_file = verify.CheckChargeFile(
             values, charge_file_warning, bool_define_charge)
 
-        if values['-CORNER_ANALYSIS-']:
+        # Verify if variability analysis is being performed
+        bool_variability = verify.check_for_variability_analysis(
+            values, corner_analysis_warning)
+
+        # Verify if PN junction results are present for each corner in the simulation space
+        if bool_variability:
             (bool_charge_corner_BL,
              bool_charge_corner_BR,
              bool_charge_corner_TL,
@@ -1225,7 +1295,7 @@ while True:
              CHARGE_file_BL,
              CHARGE_file_BR,
              CHARGE_file_TL,
-             CHARGE_file_TR) = verify.check_for_corner_analysis_charge(values)
+             CHARGE_file_TR) = verify.check_for_variability_analysis_charge(values)
 
         # Verifying propagation loss
         bool_prop_loss, prop_loss = verify.CheckPropLoss(
@@ -1265,6 +1335,86 @@ while True:
         else:
             run_charge.Update(visible=False)
 
+    elif event == '-VARIABILITY_WAVEGUIDE_HEIGHT-':
+        if bool_waveguide_height_variability:
+            bool_waveguide_height_variability = 0
+            selected_dimensions -= 1
+            wg_height_range_warning.Update('', visible=False)
+        else:
+            if selected_dimensions < variability_dimensions:
+                bool_waveguide_height_variability = 1
+                selected_dimensions += 1
+            else:
+                waveguide_height_var_box.Update(False)
+    elif event == '-VARIABILITY_WAVEGUIDE_WIDTH-':
+        if bool_waveguide_width_variability:
+            bool_waveguide_width_variability = 0
+            selected_dimensions -= 1
+            wg_width_range_warning.Update('', visible=False)
+        else:
+            if selected_dimensions < variability_dimensions:
+                bool_waveguide_width_variability = 1
+                selected_dimensions += 1
+            else:
+                waveguide_width_var_box.Update(False)
+    elif event == '-VARIABILITY_SLAB_HEIGHT-':
+        if bool_slab_height_variability:
+            bool_slab_height_variability = 0
+            selected_dimensions -= 1
+            slab_height_range_warning.Update('', visible=False)
+        else:
+            if selected_dimensions < variability_dimensions:
+                bool_slab_height_variability = 1
+                selected_dimensions += 1
+            else:
+                slab_height_var_box.Update(False)
+    elif event == '-VARIABILITY_DOPING_CONCENTRATION-':
+        if bool_doping_concentration_variability:
+            bool_doping_concentration_variability = 0
+            selected_dimensions -= 1
+            doping_concentration_range_warning.Update('', visible=False)
+        else:
+            if selected_dimensions < variability_dimensions:
+                bool_doping_concentration_variability = 1
+                selected_dimensions += 1
+            else:
+                doping_concentration_var_box.Update(False)
+    elif event == '-UPDATE_VARIABILITY-':
+
+        # Creating Dictionary for variability analysis for easy reading and manipulation
+        # Convention is to put ID for each new variable so the system detects it
+        # Then supply the Range, Warning text, and units after Using the same name as in the ID
+        Variability_Dict = {
+            "[ID] Waveguide Height": bool_waveguide_height_variability,
+            "Waveguide Height Range": 0,
+            "Waveguide Height Warning": wg_height_range_warning,
+            "Waveguide Height Units": 'nm',
+            "[ID] Waveguide Width": bool_waveguide_width_variability,
+            "Waveguide Width Range": 0,
+            "Waveguide Width Warning": wg_width_range_warning,
+            "Waveguide Width Units": 'nm',
+            "[ID] Slab Height": bool_slab_height_variability,
+            "Slab Height Range": 0,
+            "Slab Height Warning": slab_height_range_warning,
+            "Slab Height Units": 'nm',
+            "[ID] Doping Concentration": bool_doping_concentration_variability,
+            "Doping Concentration Range": 0,
+            "Doping Concentration Warning": doping_concentration_range_warning,
+            "Doping Concentration Units": '%',
+        }
+
+        Variability_Dict = verify.check_variability_range(
+            values, Variability_Dict)
+
+        # Checking which variability setting has been seelcted and updating display
+        variability_display_text, bool_corner_analyis_ready = verify.update_variability(
+            values, Variability_Dict, selected_dimensions, corner_analysis_warning)
+
+        # Updating warning message for variability analysis checkbox
+        variability_variables_text.Update(variability_display_text)
+
+        # Defining variables to either be used in the charge simulation or ring
+
     elif event == '-RUN_CHARGE-':
         # This event handles the charge simulation execution
 
@@ -1272,20 +1422,8 @@ while True:
         Radius_SI = round(Radius*1e-6, 10)
         slab_height_SI = round(slab_height*1e-9, 10)
         CouplingLength_SI = round(CouplingLength*1e-6, 10)
-
-        # Defining corner analysis range
-        wg_heights = [200e-9, 240e-9]
-        if band == 'CL':
-            wg_widths = [450e-9, 550e-9]
-        else:
-            wg_widths = [260-9, 360e-9]
-
-        # Defining nominal device
-        wg_height = 220e-9
-        if band == 'CL':
-            wg_width = 500e-9
-        else:
-            wg_width = 310-9
+        wg_width_SI = round(wg_width*1e-9, 10)
+        wg_height_SI = round(wg_height*1e-9, 10)
 
         try:
             # Simulating charge distribution
@@ -1297,51 +1435,526 @@ while True:
                                                              CouplingLength_SI, vmin_charge,
                                                              vmax_charge, save_name,
                                                              bias, band, foundry, PN_Type,
-                                                             wg_height, wg_width)
+                                                             wg_height_SI, wg_width_SI)
             if values['-CORNER_ANALYSIS-']:
                 # Repeating 4 times for all corners
                 if not SimRun:
                     save_name = CHARGE_FILE
-                CHARGE_FILE_BL, SimRun = sim.runPNJunctionSimulator(p_width_core, n_width_core,
-                                                                    p_width_slab, n_width_slab,
-                                                                    pp_width, np_width,
-                                                                    ppp_width, npp_width,
-                                                                    slab_height_SI, Radius_SI,
-                                                                    CouplingLength_SI, vmin_charge,
-                                                                    vmax_charge,
-                                                                    save_name + '_BL_Corner',
-                                                                    bias, band, foundry, PN_Type,
-                                                                    wg_heights[0], wg_widths[0])
-                CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
-                                                               p_width_slab, n_width_slab,
-                                                               pp_width, np_width,
-                                                               ppp_width, npp_width,
-                                                               slab_height_SI, Radius_SI,
-                                                               CouplingLength_SI, vmin_charge,
-                                                               vmax_charge,
-                                                               save_name + '_BR_Corner',
-                                                               bias, band, foundry, PN_Type,
-                                                               wg_heights[0], wg_widths[1])
-                CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
-                                                               p_width_slab, n_width_slab,
-                                                               pp_width, np_width,
-                                                               ppp_width, npp_width,
-                                                               slab_height_SI, Radius_SI,
-                                                               CouplingLength_SI, vmin_charge,
-                                                               vmax_charge,
-                                                               save_name + '_TL_Corner',
-                                                               bias, band, foundry, PN_Type,
-                                                               wg_heights[1], wg_widths[0])
-                CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
-                                                               p_width_slab, n_width_slab,
-                                                               pp_width, np_width,
-                                                               ppp_width, npp_width,
-                                                               slab_height_SI, Radius_SI,
-                                                               CouplingLength_SI, vmin_charge,
-                                                               vmax_charge,
-                                                               save_name + '_TR_Corner',
-                                                               bias, band, foundry, PN_Type,
-                                                               wg_heights[1], wg_widths[1])
+
+                # Intializing variability analysis variables that can be passed to charge solver
+                var_wg_height_SI = [round(wg_height_SI -
+                                          Variability_Dict['Waveguide Height Range']*1e-9, 10),
+                                    round(wg_height_SI +
+                                          Variability_Dict['Waveguide Height Range']*1e-9, 10)]
+                var_wg_width_SI = [round(wg_width_SI -
+                                         Variability_Dict['Waveguide Width Range']*1e-9, 10),
+                                   round(wg_width_SI +
+                                         Variability_Dict['Waveguide Width Range']*1e-9, 10)]
+                var_slab_height_SI = [round(slab_height_SI -
+                                            Variability_Dict['Slab Height Range']*1e-9, 10),
+                                      round(slab_height_SI +
+                                            Variability_Dict['Slab Height Range']*1e-9, 10)]
+                var_doping_error = [-Variability_Dict['Doping Concentration Range'],
+                                    Variability_Dict['Doping Concentration Range']]
+
+                # Since there are 4 variables possible for the variability analysis and we are doing
+                # subsets of 2, there exists 6 possible combinations, therefore six cases are shown
+                # This could be coded in a cleaner way if the functions were rewritten, TODO()
+
+                # Listing cases.
+                # Case: 1 = wg_height x wg_width
+                # Case: 2 = wg_height x slab_height
+                # Case: 3 = wg_height x doping_concentration
+                # Case: 4 = wg_width x slab_height
+                # Case: 5 = wg_width x doping_concentration
+                # Case: 6 = slab_height x doping_concentration
+
+                # Case 1
+                if (Variability_Dict['[ID] Waveguide Height'] and
+                        Variability_Dict['[ID] Waveguide Width']):
+
+                    # Constructing bottom left corner
+                    identifier_BL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width-' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    CHARGE_FILE_BL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI,
+                                                                   vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BL,
+                                                                   bias, band, foundry,
+                                                                   PN_Type,
+                                                                   var_wg_height_SI[0],
+                                                                   var_wg_width_SI[0])
+
+                    # Constructing bottom right corner
+                    identifier_BR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width-' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[0],
+                                                                   var_wg_width_SI[1])
+
+                    # Constructing bottom left corner
+                    identifier_TL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width+' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TL,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[1],
+                                                                   var_wg_width_SI[0])
+
+                    # Constructing bottom left corner
+                    identifier_TR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width+' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+                    identifier_TR = identifier_TR.replace('.', 'p')
+                    CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[1],
+                                                                   var_wg_width_SI[1])
+                # Case 2
+                elif (Variability_Dict['[ID] Waveguide Height'] and
+                        Variability_Dict['[ID] Slab Height']):
+
+                    # Constructing bottom left corner
+                    identifier_BL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    CHARGE_FILE_BL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[0], Radius_SI,
+                                                                   CouplingLength_SI,
+                                                                   vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BL,
+                                                                   bias, band, foundry,
+                                                                   PN_Type,
+                                                                   var_wg_height_SI[0],
+                                                                   wg_width_SI)
+
+                    # Constructing bottom right corner
+                    identifier_BR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[1], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[0],
+                                                                   wg_width_SI)
+
+                    # Constructing bottom left corner
+                    identifier_TL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[0], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TL,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[1],
+                                                                   wg_width_SI)
+
+                    # Constructing bottom left corner
+                    identifier_TR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_TR = identifier_TR.replace('.', 'p')
+                    CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[1], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[1],
+                                                                   wg_width_SI)
+                # Case 3
+                elif (Variability_Dict['[ID] Waveguide Height'] and
+                        Variability_Dict['[ID] Doping Concentration']):
+
+                    # Constructing bottom left corner
+                    identifier_BL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    CHARGE_FILE_BL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI,
+                                                                   vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BL,
+                                                                   bias, band, foundry,
+                                                                   PN_Type,
+                                                                   var_wg_height_SI[0],
+                                                                   wg_width_SI,
+                                                                   var_doping_error[0])
+
+                    # Constructing bottom right corner
+                    identifier_BR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[0],
+                                                                   wg_width_SI,
+                                                                   var_doping_error[1])
+
+                    # Constructing bottom left corner
+                    identifier_TL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TL,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[1],
+                                                                   wg_width_SI,
+                                                                   var_doping_error[0])
+
+                    # Constructing bottom left corner
+                    identifier_TR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_TR = identifier_TR.replace('.', 'p')
+                    CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   var_wg_height_SI[1],
+                                                                   wg_width_SI,
+                                                                   var_doping_error[1])
+                # Case 4
+                elif (Variability_Dict['[ID] Waveguide Width'] and
+                        Variability_Dict['[ID] Slab Height']):
+
+                    # Constructing bottom left corner
+                    identifier_BL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    CHARGE_FILE_BL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[0], Radius_SI,
+                                                                   CouplingLength_SI,
+                                                                   vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BL,
+                                                                   bias, band, foundry,
+                                                                   PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[0])
+
+                    # Constructing bottom right corner
+                    identifier_BR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[1], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[0])
+
+                    # Constructing bottom left corner
+                    identifier_TL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[0], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TL,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[1])
+
+                    # Constructing bottom left corner
+                    identifier_TR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+                    identifier_TR = identifier_TR.replace('.', 'p')
+                    CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[1], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[1])
+                # Case 5
+                elif (Variability_Dict['[ID] Waveguide Width'] and
+                        Variability_Dict['[ID] Doping Concentration']):
+
+                    # Constructing bottom left corner
+                    identifier_BL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    CHARGE_FILE_BL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI,
+                                                                   vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BL,
+                                                                   bias, band, foundry,
+                                                                   PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[0],
+                                                                   var_doping_error[0])
+
+                    # Constructing bottom right corner
+                    identifier_BR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[0],
+                                                                   var_doping_error[1])
+
+                    # Constructing bottom left corner
+                    identifier_TL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TL,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[1],
+                                                                   var_doping_error[0])
+
+                    # Constructing bottom left corner
+                    identifier_TR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_TR = identifier_TR.replace('.', 'p')
+                    CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   slab_height_SI, Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   var_wg_width_SI[1],
+                                                                   var_doping_error[1])
+                # Case 6
+                elif (Variability_Dict['[ID] Slab Height'] and
+                        Variability_Dict['[ID] Doping Concentration']):
+
+                    # Constructing bottom left corner
+                    identifier_BL = ('_slab_height-' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    CHARGE_FILE_BL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[0], Radius_SI,
+                                                                   CouplingLength_SI,
+                                                                   vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BL,
+                                                                   bias, band, foundry,
+                                                                   PN_Type,
+                                                                   wg_height_SI,
+                                                                   wg_width_SI,
+                                                                   var_doping_error[0])
+
+                    # Constructing bottom right corner
+                    identifier_BR = ('_slab_height+' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    CHARGE_FILE_BR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[0], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_BR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   wg_width_SI,
+                                                                   var_doping_error[1])
+
+                    # Constructing bottom left corner
+                    identifier_TL = ('_slab_height-' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    CHARGE_FILE_TL, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[1], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TL,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   wg_width_SI,
+                                                                   var_doping_error[0])
+
+                    # Constructing bottom left corner
+                    identifier_TR = ('_slab_height+' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+                    identifier_TR = identifier_TR.replace('.', 'p')
+                    CHARGE_FILE_TR, _ = sim.runPNJunctionSimulator(p_width_core, n_width_core,
+                                                                   p_width_slab, n_width_slab,
+                                                                   pp_width, np_width,
+                                                                   ppp_width, npp_width,
+                                                                   var_slab_height_SI[1], Radius_SI,
+                                                                   CouplingLength_SI, vmin_charge,
+                                                                   vmax_charge,
+                                                                   save_name + identifier_TR,
+                                                                   bias, band, foundry, PN_Type,
+                                                                   wg_height_SI,
+                                                                   wg_width_SI,
+                                                                   var_doping_error[1])
 
             # Set bool to false to allow for verifcation process to double check it is correct
             bool_charge = 0
@@ -1374,21 +1987,8 @@ while True:
             Radius_SI = round(Radius*1e-6, 10)
             slab_height_SI = round(slab_height*1e-9, 10)
             CouplingLength_SI = round(CouplingLength*1e-6, 10)
-
-            # Defining corner analysis range
-            if values['-CORNER_ANALYSIS-']:
-                wg_heights = [195e-9, 245e-9]
-                if band == 'CL':
-                    wg_widths = [450e-9, 550e-9]
-                else:
-                    wg_widths = [260-9, 360e-9]
-
-            # Defining nominal waveguide values
-            wg_height = 220e-9
-            if band == 'CL':
-                wg_width = 500e-9
-            else:
-                wg_width = 310-9
+            wg_width_SI = round(wg_width*1e-9, 10)
+            wg_height_SI = round(wg_height*1e-9, 10)
 
             # Gap is unique since it can be swept for critical coupling
             if bool_critical_couple == 1:
@@ -1399,7 +1999,7 @@ while True:
                     Radius_SI, Gap_SI, slab_height_SI,
                     CouplingLength_SI, LambdaStart, LambdaEnd,
                     band, CHARGE_file, prop_loss,
-                    wg_height, wg_width)
+                    wg_height_SI, wg_width_SI)
 
                 gap_box.update(str(round(saved_results.CriticalCoupleGap/1e-9)))
             else:
@@ -1409,68 +2009,584 @@ while True:
                 saved_results = sim.runSimulation(
                     Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
                     LambdaStart, LambdaEnd, band, CHARGE_file, prop_loss,
-                    wg_height, wg_width)
+                    wg_height_SI, wg_width_SI)
 
             if values['-CORNER_ANALYSIS-']:
                 # Executing 4 extra simulations
-                if bool_critical_couple == 1:
-                    saved_results_BL = sim.CriticalCouplingAutomation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
-                        wg_heights[0], wg_widths[0])
-                    Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
-                else:
-                    saved_results_BL = sim.runSimulation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
-                        wg_heights[0], wg_widths[0])
-                if bool_critical_couple == 1:
-                    saved_results_BR = sim.CriticalCouplingAutomation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
-                        wg_heights[0], wg_widths[1])
-                    Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
-                else:
-                    saved_results_BR = sim.runSimulation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
-                        wg_heights[0], wg_widths[1])
-                if bool_critical_couple == 1:
-                    saved_results_TL = sim.CriticalCouplingAutomation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
-                        wg_heights[1], wg_widths[0])
-                    Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
-                else:
-                    saved_results_TL = sim.runSimulation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
-                        wg_heights[1], wg_widths[0])
-                if bool_critical_couple == 1:
-                    saved_results_TR = sim.CriticalCouplingAutomation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
-                        wg_heights[1], wg_widths[1])
-                    Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
-                else:
-                    saved_results_TR = sim.runSimulation(
-                        Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
-                        LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
-                        wg_heights[1], wg_widths[1])
+                # The 2 paramters varied are depicted in the the variability dictionairy
+                # Intializing variability analysis variables that can be passed to charge solver
+                var_wg_height_SI = [round(wg_height_SI -
+                                          Variability_Dict['Waveguide Height Range']*1e-9, 10),
+                                    round(wg_height_SI +
+                                          Variability_Dict['Waveguide Height Range']*1e-9, 10)]
+                var_wg_width_SI = [round(wg_width_SI -
+                                         Variability_Dict['Waveguide Width Range']*1e-9, 10),
+                                   round(wg_width_SI +
+                                         Variability_Dict['Waveguide Width Range']*1e-9, 10)]
+                var_slab_height_SI = [round(slab_height_SI -
+                                            Variability_Dict['Slab Height Range']*1e-9, 10),
+                                      round(slab_height_SI +
+                                            Variability_Dict['Slab Height Range']*1e-9, 10)]
+                var_doping_error = [-Variability_Dict['Doping Concentration Range'],
+                                    Variability_Dict['Doping Concentration Range']]
+
+                # Since there are 4 variables possible for the variability analysis and we are doing
+                # subsets of 2, there exists 6 possible combinations, therefore six cases are shown
+                # This could be coded in a cleaner way if the functions were rewritten, TODO()
+
+                # Listing cases.
+                # Case: 1 = wg_height x wg_width
+                # Case: 2 = wg_height x slab_height
+                # Case: 3 = wg_height x doping_concentration
+                # Case: 4 = wg_width x slab_height
+                # Case: 5 = wg_width x doping_concentration
+                # Case: 6 = slab_height x doping_concentration
+
+                # Case 1
+                if (Variability_Dict['[ID] Waveguide Height'] and
+                        Variability_Dict['[ID] Waveguide Width']):
+
+                    # Defining identifiers to locate charge simulation files for corners
+                    identifier_BL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width-' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+
+                    identifier_BR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width-' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+
+                    identifier_TL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width+' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+
+                    identifier_TR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_wg_width+' + str(Variability_Dict['Waveguide Width Range']) +
+                                     Variability_Dict['Waveguide Width Units'])
+
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    identifier_TR = identifier_TR.replace('.', 'p')
+
+                    # Constucting path to file from name, this got a little convoluted
+                    charge_file = str(CHARGE_file).split('\\')[-1]
+                    charge_file = charge_file.split('.')[0]
+                    CHARGE_file_BL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BL))
+                    CHARGE_file_BR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BR))
+                    CHARGE_file_TL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TL))
+                    CHARGE_file_TR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TR))
+
+                    if bool_critical_couple == 1:
+                        saved_results_BL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], var_wg_width_SI[0])
+                        Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BL = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], var_wg_width_SI[0])
+                    if bool_critical_couple == 1:
+                        saved_results_BR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], var_wg_width_SI[1])
+                        Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BR = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                            var_wg_height_SI[0], var_wg_width_SI[1])
+                    if bool_critical_couple == 1:
+                        saved_results_TL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[1], var_wg_width_SI[0])
+                        Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TL = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                            var_wg_height_SI[1], var_wg_width_SI[0])
+                    if bool_critical_couple == 1:
+                        saved_results_TR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[1], var_wg_width_SI[1])
+                        Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TR = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                            var_wg_height_SI[1], var_wg_width_SI[1])
+                # Case 2
+                elif (Variability_Dict['[ID] Waveguide Height'] and
+                        Variability_Dict['[ID] Slab Height']):
+
+                    # Defining identifiers to locate charge simulation files for corners
+                    identifier_BL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_BR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_TL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_TR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    identifier_TR = identifier_TR.replace('.', 'p')
+
+                    # Constucting path to file from name, this got a little convoluted
+                    charge_file = str(CHARGE_file).split('\\')[-1]
+                    charge_file = charge_file.split('.')[0]
+                    CHARGE_file_BL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BL))
+                    CHARGE_file_BR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BR))
+                    CHARGE_file_TL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TL))
+                    CHARGE_file_TR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TR))
+
+                    if bool_critical_couple == 1:
+                        saved_results_BL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                        Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BL = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_BR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                        Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BR = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_TL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+                        Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TL = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_TR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+                        Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TR = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+                # Case 3
+                elif (Variability_Dict['[ID] Waveguide Height'] and
+                        Variability_Dict['[ID] Doping Concentration']):
+
+                    # Defining identifiers to locate charge simulation files for corners
+                    identifier_BL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_BR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_TL = ('_wg_height-' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_TR = ('_wg_height+' + str(Variability_Dict['Waveguide Height Range'])
+                                     + Variability_Dict['Waveguide Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    identifier_TR = identifier_TR.replace('.', 'p')
+
+                    # Constucting path to file from name, this got a little convoluted
+                    charge_file = str(CHARGE_file).split('\\')[-1]
+                    charge_file = charge_file.split('.')[0]
+                    CHARGE_file_BL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BL))
+                    CHARGE_file_BR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BR))
+                    CHARGE_file_TL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TL))
+                    CHARGE_file_TR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TR))
+
+                    if bool_critical_couple == 1:
+                        saved_results_BL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                        Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BL = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_BR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                        Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BR = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                            var_wg_height_SI[0], wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_TL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+                        Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TL = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_TR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+                        Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TR = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                            var_wg_height_SI[1], wg_width_SI)
+
+                # Case 4
+                elif (Variability_Dict['[ID] Waveguide Width'] and
+                        Variability_Dict['[ID] Slab Height']):
+
+                    # Defining identifiers to locate charge simulation files for corners
+                    identifier_BL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_BR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height-' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_TL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_TR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_slab_height+' + str(Variability_Dict['Slab Height Range']) +
+                                     Variability_Dict['Slab Height Units'])
+
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    identifier_TR = identifier_TR.replace('.', 'p')
+
+                    # Constucting path to file from name, this got a little convoluted
+                    charge_file = str(CHARGE_file).split('\\')[-1]
+                    charge_file = charge_file.split('.')[0]
+                    CHARGE_file_BL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BL))
+                    CHARGE_file_BR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BR))
+                    CHARGE_file_TL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TL))
+                    CHARGE_file_TR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TR))
+
+                    if bool_critical_couple == 1:
+                        saved_results_BL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                        Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BL = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                    if bool_critical_couple == 1:
+                        saved_results_BR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                        Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BR = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                    if bool_critical_couple == 1:
+                        saved_results_TL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                        Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TL = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                    if bool_critical_couple == 1:
+                        saved_results_TR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                        Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TR = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                # Case 5
+                elif (Variability_Dict['[ID] Waveguide Width'] and
+                        Variability_Dict['[ID] Doping Concentration']):
+
+                    # Defining identifiers to locate charge simulation files for corners
+                    identifier_BL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_BR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_TL = ('_wg_width-' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_TR = ('_wg_width+' + str(Variability_Dict['Waveguide Width Range'])
+                                     + Variability_Dict['Waveguide Width Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    identifier_TR = identifier_TR.replace('.', 'p')
+
+                    # Constucting path to file from name, this got a little convoluted
+                    charge_file = str(CHARGE_file).split('\\')[-1]
+                    charge_file = charge_file.split('.')[0]
+                    CHARGE_file_BL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BL))
+                    CHARGE_file_BR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BR))
+                    CHARGE_file_TL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TL))
+                    CHARGE_file_TR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TR))
+
+                    if bool_critical_couple == 1:
+                        saved_results_BL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                        Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BL = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                    if bool_critical_couple == 1:
+                        saved_results_BR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                        Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BR = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                            wg_height_SI, var_wg_width_SI[0])
+                    if bool_critical_couple == 1:
+                        saved_results_TL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                        Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TL = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                    if bool_critical_couple == 1:
+                        saved_results_TR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                        Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TR = sim.runSimulation(
+                            Radius_SI, Gap_SI, slab_height_SI, CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                            wg_height_SI, var_wg_width_SI[1])
+                # Case 6
+                elif (Variability_Dict['[ID] Slab Height'] and
+                        Variability_Dict['[ID] Doping Concentration']):
+
+                    # Defining identifiers to locate charge simulation files for corners
+                    identifier_BL = ('_slab_height-' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_BR = ('_slab_height+' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping-' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_TL = ('_slab_height-' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_TR = ('_slab_height+' + str(Variability_Dict['Slab Height Range'])
+                                     + Variability_Dict['Slab Height Units'] +
+                                     '_doping+' +
+                                     str(Variability_Dict['Doping Concentration Range']) +
+                                     Variability_Dict['Doping Concentration Units'])
+
+                    identifier_BL = identifier_BL.replace('.', 'p')
+                    identifier_BR = identifier_BR.replace('.', 'p')
+                    identifier_TL = identifier_TL.replace('.', 'p')
+                    identifier_TR = identifier_TR.replace('.', 'p')
+
+                    # Constucting path to file from name, this got a little convoluted
+                    charge_file = str(CHARGE_file).split('\\')[-1]
+                    charge_file = charge_file.split('.')[0]
+                    CHARGE_file_BL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BL))
+                    CHARGE_file_BR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_BR))
+                    CHARGE_file_TL = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TL))
+                    CHARGE_file_TR = Path(str(CHARGE_file).replace(
+                        charge_file, charge_file + identifier_TR))
+
+                    if bool_critical_couple == 1:
+                        saved_results_BL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, wg_width_SI)
+                        Gap_BL = round(saved_results_BL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BL = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_BR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, wg_width_SI)
+                        Gap_BR = round(saved_results_BR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_BR = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[0], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BR, prop_loss,
+                            wg_height_SI, wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_TL = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, wg_width_SI)
+                        Gap_TL = round(saved_results_TL.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TL = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TL, prop_loss,
+                            wg_height_SI, wg_width_SI)
+                    if bool_critical_couple == 1:
+                        saved_results_TR = sim.CriticalCouplingAutomation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_BL, prop_loss,
+                            wg_height_SI, wg_width_SI)
+                        Gap_TR = round(saved_results_TR.CriticalCoupleGap/1e-9)
+                    else:
+                        saved_results_TR = sim.runSimulation(
+                            Radius_SI, Gap_SI, var_slab_height_SI[1], CouplingLength_SI,
+                            LambdaStart, LambdaEnd, band, CHARGE_file_TR, prop_loss,
+                            wg_height_SI, wg_width_SI)
 
                 # If corner analysis was performed, the result windows are made visible
                 toggle_Corner_Analysis_Results(True)
 
-                # Updating gap display box to show a range of gaps that could be needed for critical
-                # coupling based on the corner analysis results
-                critical_gaps = [Gap_BL, Gap_BR, Gap_TL, Gap_TR]
-                min_critical_gap = min(critical_gaps)
-                max_critical_gap = max(critical_gaps)
-                gap_box.update(str(min_critical_gap) + ' - ' + str(max_critical_gap))
-                sg.Popup(
-                    'Range of possible critical coupling gaps shown in gap display box'
-                    ' Bl = ' + str(Gap_BL) + ', BR = ' + str(Gap_BR) +
-                    ', Tl = ' + str(Gap_TL) + ', TR = ' + str(Gap_TR), keep_on_top=True)
+                if bool_critical_couple == 1:
+                    # Updating gap display box to show a range of gaps
+                    # that could be needed for critical
+                    # coupling based on the corner analysis results
+                    critical_gaps = [Gap_BL, Gap_BR, Gap_TL, Gap_TR]
+                    min_critical_gap = min(critical_gaps)
+                    max_critical_gap = max(critical_gaps)
+                    gap_box.update(str(min_critical_gap) + ' - ' + str(max_critical_gap))
+                    sg.Popup(
+                        'Range of possible critical coupling gaps shown in gap display box'
+                        ' Bl = ' + str(Gap_BL) + ', BR = ' + str(Gap_BR) +
+                        ', Tl = ' + str(Gap_TL) + ', TR = ' + str(Gap_TR), keep_on_top=True)
 
             # Now that the data has been simulated we will plot it in the results tab.
             # Enabling result display buttons
@@ -1518,13 +2634,7 @@ while True:
         plt.figure(1)
         plt.figure(1).clear()
         fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+        fig.canvas.manager.window.attributes('-topmost', 1)
 
     elif event == '-PHASE-':
         # This handles the phase shift plot
@@ -1609,14 +2719,7 @@ while True:
         plt.figure(1)
         plt.figure(1).clear()
         fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-        # -------------------------------
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+        fig.canvas.manager.window.attributes('-topmost', 1)
 
         # Updating the displayed results
         update_text_results('Fill in the following information and then click update Eye:',
@@ -1637,13 +2740,7 @@ while True:
         plt.figure(1)
         plt.figure(1).clear()
         fig = plt.gcf()
-        DPI = fig.get_dpi()
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
+        fig.canvas.manager.window.attributes('-topmost', 1)
 
         # Updating the displayed results
         update_text_results('Fill in the following information and then click update Eye:',
@@ -1662,8 +2759,6 @@ while True:
         # now updating plot with Eye diagram
         plt.figure(1)
         plt.figure(1).clear()
-        fig = plt.gcf()
-        DPI = fig.get_dpi()
 
         # If verification passes, then execute eye diagram simulation
         if bool_eye == 1:
@@ -1694,15 +2789,11 @@ while True:
             plt.xlabel('time [s]')
             plt.ylabel('Amplitude')
             plt.grid()
+            fig = plt.gcf()
+            fig.canvas.manager.window.attributes('-topmost', 1)
 
         else:
             print('Not updating Eye diagram until proper data is provided')
-
-        # Defining TKcanvas canvas size
-        fig.set_size_inches(404 * 2 / float(DPI), 404 / float(DPI))
-
-        # Converting figure to canvas plot
-        draw_figure_w_toolbar(window['fig_cv'].TKCanvas, fig, window['controls_cv'].TKCanvas)
 
     elif event == '-CRITICAL_COUPLE-':
         # This event handels the critical coupling set up, i.e. read-only box
@@ -1853,14 +2944,32 @@ while True:
 
     # This is the boolean checker that determines if the entire simulation set up has been completed
     if (bool_radius == 1 and bool_gap == 1 and bool_coupling_length == 1
-            and bool_charge == 1 and bool_prop_loss == 1):
-        run_sim.Update(visible=True)
+            and bool_charge == 1 and bool_prop_loss == 1 and bool_wg_height == 1
+            and bool_wg_width == 1):
+        # Checking for variability analysis
+        if bool_variability:
+            # only allow if info has been provided
+            if bool_corner_analyis_ready:
+                run_sim.Update(visible=True)
+            else:
+                run_sim.Update(visible=False)
+        else:
+            run_sim.Update(visible=True)
     else:
         run_sim.Update(visible=False)
     graph.Update()
     # This is the boolean checker that determines if the Charge window should be displayed or not
     if (bool_define_charge == 1 and bool_slab == 1 and bool_gap == 1
-            and bool_radius == 1 and bool_coupling_length == 1):
+            and bool_radius == 1 and bool_coupling_length == 1 and bool_wg_height == 1
+            and bool_wg_width == 1):
         charge_window.Update(visible=True)
     else:
         charge_window.Update(visible=False)
+    if bool_variability:
+        variability_window.Update(visible=True)
+    else:
+        variability_window.Update(visible=False)
+
+# Closing all opened windows in the event of software shutdown
+plt.close()
+window.close()

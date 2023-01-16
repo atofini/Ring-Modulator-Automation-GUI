@@ -1,0 +1,376 @@
+# Sweep paramters
+mesh_max = [0.01]*1e-6;
+for(ii=1:length(mesh_max)){
+    switchtolayout;
+    deleteall;
+    
+    # Manually defining for testing
+    wg_height = 220e-9;
+    wg_width = 500e-9;
+    slab_height = 90e-9;
+    p_width_core = 300e-9;
+    n_width_core = 200e-9;
+    p_width_slab = 0;
+    n_width_slab = 0;
+    pp_width = 300e-9;
+    np_width = 300e-9;
+    ppp_width = 500e-9;
+    npp_width = 500e-9;
+    radius = 10e-6;
+    coupling_length = 0;
+    band = 'CL';
+    bias = 'Reverse';
+    doping_error = 0;
+    v_min = 0;
+    v_max = 5;
+    N = 21;
+    surface_recomb = 1e7;
+    save_name = 'charge_convergence';
+    
+    
+    
+    cwd = pwd;
+    cd(cwd + "\\MeshMaxLength_Results");
+    
+    Waveguide_Height = wg_height;
+    Waveguide_Width = wg_width;
+    if (band == 'CL'){
+        Waveguide_Width_Nominal = 0.5e-6;
+    }else{
+        Waveguide_Width_Nominal = 0.31e-6;
+    }
+    
+    Pad_Heigth = Waveguide_Height - slab_height;
+    
+    Sim_Length = 2e-6;
+    Cladding_Height = 1e-6;
+    Cladding_Width = p_width_core + n_width_core + p_width_slab + n_width_slab + pp_width + np_width + ppp_width + npp_width;
+    
+    sim_clearance = 50e-9;
+    Sim_x = Cladding_Width - 2*sim_clearance;
+    Sim_y = 1.6e-6;
+    
+    circ = 2*pi*radius + 2*coupling_length;
+    
+    # Adding Charge Solver
+    addchargesolver;
+    set("solver type","newton");
+    set("global iteration limit", 100);
+    set("min edge length",0.001e-6);
+    set("max edge length",mesh_max(ii));
+    select("simulation region");
+    set("dimension","2D z-normal");
+    set("x span",Sim_x);
+    set("y span",Sim_y);
+    
+    # Defining Materials
+    addmodelmaterial;
+    set("name","Si (Silicon)");
+    set("color",[1,0,0]);
+    select("materials::Si (Silicon)");
+    addmaterialproperties("CT","Si (Silicon)");  # importing from electrical material database
+    select("materials::Si (Silicon)");
+    addmaterialproperties("HT","Si (Silicon)");  # importing from thermal material database
+    
+    addmodelmaterial;
+    set("name","Al (Aluminium)");
+    set("color",[0,1,0]);
+    select("materials::Al (Aluminium)");
+    addmaterialproperties("CT","Al (Aluminium) - CRC"); # importing from electrical material database
+    select("materials::Al (Aluminium)");
+    addmaterialproperties("HT","Al (Aluminium) - CRC");  # importing from thermal material database
+    
+    addmodelmaterial;
+    set("name","SiO2 (Glass)");
+    select("materials::SiO2 (Glass)");
+    addmaterialproperties("CT","SiO2 (Glass) - Sze"); # importing from electrical material database
+    select("materials::SiO2 (Glass)");
+    addmaterialproperties("HT","SiO2 (Glass) - Sze");  # importing from thermal material database
+    
+    
+    # Defining Material Geometry 
+    
+    addmesh;
+    set("max edge length",0.01e-6);
+    set("y",Waveguide_Height/2);
+    set("z span", 1e-6);
+    
+    #Calculating slab differene from waveguide shrinkage/expansion
+    slab_extra = (Waveguide_Width_Nominal - Waveguide_Width)/2;
+    
+    # Slab
+    addrect;
+    set("name","Left Slab");
+    set("material","Si (Silicon)");
+    set("x", slab_extra/2 -Waveguide_Width_Nominal/2 - p_width_slab/2 - pp_width/2 - ppp_width/2);
+    set("y", slab_height/2);
+    set("z", 0);
+    set("x span", p_width_slab + pp_width + ppp_width + slab_extra);
+    set("y span", slab_height);
+    set("z span", Sim_Length);
+    set("enabled",1);
+    
+    addrect;
+    set("name","Right Slab");
+    set("material","Si (Silicon)");
+    set("x", - slab_extra/2 + Waveguide_Width_Nominal/2 + n_width_slab/2 +  np_width/2 + npp_width/2);
+    set("y", slab_height/2);
+    set("z", 0);
+    set("x span", n_width_slab + np_width + npp_width +slab_extra);
+    set("y span", slab_height);
+    set("z span", Sim_Length);
+    set("enabled",1);
+    
+    
+    
+    
+    
+    # Waveguide
+    addrect;
+    set("name","Waveguide");
+    set("material","Si (Silicon)");
+    set("x", 0);
+    set("y", Waveguide_Height/2);
+    set("z", 0);
+    set("x span", Waveguide_Width);
+    set("y span", Waveguide_Height);
+    set("z span", Sim_Length);
+    
+    
+    # Buried Oxide
+    addrect;
+    set("name","Buried Oxide");
+    set("material","SiO2 (Glass)");
+    set("x", 0);
+    set("y", -Cladding_Height/2);
+    set("z", 0);
+    set("x span", Cladding_Width);
+    set("y span", Cladding_Height);
+    set("z span", Sim_Length);
+    set("mesh order",3);
+    
+    addrect;
+    set("name","source");
+    set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width - ppp_width/2);
+    set("y",slab_height + Pad_Heigth/2);
+    set("z",0);
+    set("x span", npp_width);
+    set("y span", Pad_Heigth);
+    set("z span",Sim_Length);
+    set("material","Al (Aluminium)");
+    
+    
+    addrect;
+    set("name","drain");
+    set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width + npp_width/2);
+    set("y",slab_height + Pad_Heigth/2);
+    set("z",0);
+    set("x span", ppp_width);
+    set("y span", Pad_Heigth);
+    set("z span",Sim_Length);
+    set("material","Al (Aluminium)");
+    
+    
+    # Cladding
+    addrect;
+    set("name","Surface Oxide");
+    set("material","SiO2 (Glass)");
+    set("x", 0);
+    set("y", Cladding_Height/2);
+    set("z", 0);
+    set("x span", Cladding_Width);
+    set("y span", Cladding_Height);
+    set("z span", Sim_Length);
+    set("alpha",0.5);
+    set("mesh order",3);
+    
+    
+    
+    #Adding layout group to organize doping levels
+    addgroup;
+    set("name","doping");
+    
+    # doping error multiplier
+    doping_multiplier = 1 + doping_error/100;
+    
+    #n = 2.1e23; # laval says 2.4e24
+    #p = 3.6e23; # laval says 8.0e23
+    #np = 2.9e24;
+    #pp = 1.8e24;
+    #npp = 1.0e26; # laval says 4.4e26
+    #ppp = 1.0e26; # laval says 4.4e26
+    
+    # This is testing stuff to match Laval
+    n = 2.4e24 * doping_multiplier; 
+    p = 8.0e23 * doping_multiplier; 
+    np = 2.9e24 * doping_multiplier;
+    pp = 1.8e24 * doping_multiplier;
+    npp = 4.4e26 * doping_multiplier; 
+    ppp = 4.4e26 * doping_multiplier; 
+    
+    adddope;
+    set("name","n_core");
+    set("x",Waveguide_Width_Nominal/2-n_width_core/2);
+    set("y",Waveguide_Height/2);
+    set("z",0);
+    set("x span",n_width_core);
+    set("y span",Waveguide_Height);
+    set("z span",1.5e-6);
+    set("dopant type","n");
+    set("concentration",n);
+    addtogroup("doping");
+    
+    adddope;
+    set("name","p_core");
+    set("x",-Waveguide_Width_Nominal/2+p_width_core/2);
+    set("y",Waveguide_Height/2);
+    set("z",0);
+    set("x span",p_width_core);
+    set("y span",Waveguide_Height);
+    set("z span",1.5e-6);
+    set("dopant type","p");
+    set("concentration",p);
+    addtogroup("doping");
+    
+    if (n_width_slab > 0){
+        adddope;
+        set("name","n_slab");
+        set("x",Waveguide_Width_Nominal/2 + n_width_slab/2);
+        set("y",Waveguide_Height/2);
+        set("z",0);
+        set("x span",n_width_slab);
+        set("y span",Waveguide_Height);
+        set("z span",1.5e-6);
+        set("dopant type","n");
+        set("concentration",n);
+        addtogroup("doping");
+    }
+    
+    if (p_width_slab > 0){
+        adddope;
+        set("name","p_slab");
+        set("x",-Waveguide_Width_Nominal/2 - p_width_slab/2);
+        set("y",Waveguide_Height/2);
+        set("z",0);
+        set("x span",p_width_slab);
+        set("y span",Waveguide_Height);
+        set("z span",1.5e-6);
+        set("dopant type","p");
+        set("concentration",p);
+        addtogroup("doping");
+    }
+    
+    if (np_width > 0){
+        adddope;
+        set("name","n+");
+        set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width/2);
+        set("y",slab_height/2);
+        set("z",0);
+        set("x span",np_width);
+        set("y span",slab_height);
+        set("z span",1.5e-6);
+        set("dopant type","n");
+        set("concentration",np);
+        addtogroup("doping");
+    }
+    
+    if (pp_width > 0){
+        adddope;
+        set("name","p+");
+        set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width/2);
+        set("y",slab_height/2);
+        set("z",0);
+        set("x span",pp_width);
+        set("y span",slab_height);
+        set("z span",1.5e-6);
+        set("dopant type","p");
+        set("concentration",pp);
+        addtogroup("doping");
+    }
+    
+    adddope;
+    set("name","n++");
+    set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width + npp_width/2);
+    set("y",slab_height/2);
+    set("z",0);
+    set("x span",npp_width);
+    set("y span",slab_height);
+    set("z span",1.5e-6);
+    set("dopant type","n");
+    set("concentration",npp);
+    addtogroup("doping");
+    
+    adddope;
+    set("name","p++");
+    set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width - ppp_width/2);
+    set("y",slab_height/2);
+    set("z",0);
+    set("x span",ppp_width);
+    set("y span",slab_height);
+    set("z span",1.5e-6);
+    set("dopant type","p");
+    set("concentration",ppp);
+    addtogroup("doping");
+    
+    
+    # Adding charge monitor
+    addchargemonitor;
+    set("name","monitor_charge");
+    
+    set("monitor type","2D z-normal");
+    set("save data",0);
+    set("filename",save_name + '_SurfRecomb' +num2str(mesh_max(ii)));
+    set("integrate total charge",1);
+    set("y",Waveguide_Height/2);
+    set("x span",Sim_x);
+    
+    
+    
+    
+    # Adding electrical boundary conditions
+    addelectricalcontact;
+    set("name","NType");
+    set("surface type","solid");
+    set("solid","drain");
+    
+    if (bias == 'Forward'){
+        set("sweep type","single");
+        set("voltage",0);
+    }else{
+        set("sweep type","range");
+        set("range start",v_min);
+        set("range num points",N);
+        set("range stop",v_max);
+    }
+    
+    
+    addelectricalcontact;
+    set("name","PType");
+    set("surface type","solid");
+    set("solid","source");
+    if (bias == 'Forward'){
+        set("sweep type","range");
+        set("range start",v_min);
+        set("range num points",N);
+        set("range stop",v_max);
+    }else{
+        set("sweep type","single");
+        set("voltage",0);
+    }
+    
+    # Adding surface recombination
+    addsurfacerecombinationbc;
+    set("electron velocity",surface_recomb);
+    set("hole velocity",surface_recomb);
+    set("surface type","material:material");
+    set("material 1","Si (Silicon)");
+    set("material 2","Al (Aluminium)");
+    
+    save('ChargeSim_MeshMin' + num2str(mesh_max(ii)) + '.ldev');
+    
+    try{
+        run;
+    } catch(errMsg);
+    cd(cwd);
+
+}

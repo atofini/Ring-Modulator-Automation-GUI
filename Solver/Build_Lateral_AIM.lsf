@@ -156,18 +156,19 @@ set("z span", Sim_Length);
 set("alpha",0.5);
 set("mesh order",3);
 
-
+# doping error multiplier
+doping_multiplier = 1 + doping_error/100;
 
 #Adding layout group to organize doping levels
-N1Al = 3e22;
-N2AM = 2.5e23;
-N3Al = 2.5e24;
-N4Al = 2.5e25;
-N5Al = 1.25e26;
-P1Al = 3e22;
-P2Al = 2.5e23;
-P4Al = 2.5e24;
-P5Al = 2.5e25;
+N1Al = 3e22 * doping_multiplier;
+N2AM = 2.5e23 * doping_multiplier;
+N3Al = 2.5e24 * doping_multiplier;
+N4Al = 2.5e25 * doping_multiplier;
+N5Al = 1.25e26 * doping_multiplier;
+P1Al = 3e22 * doping_multiplier;
+P2Al = 2.5e23 * doping_multiplier;
+P4Al = 2.5e24 * doping_multiplier;
+P5Al = 2.5e25 * doping_multiplier;
 
 
 addgroup;

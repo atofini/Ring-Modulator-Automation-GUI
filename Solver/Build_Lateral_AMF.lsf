@@ -164,6 +164,24 @@ set("mesh order",3);
 addgroup;
 set("name","doping");
 
+# doping error multiplier
+doping_multiplier = 1 + doping_error/100;
+
+#n = 2.1e23; # laval says 2.4e24
+#p = 3.6e23; # laval says 8.0e23
+#np = 2.9e24;
+#pp = 1.8e24;
+#npp = 1.0e26; # laval says 4.4e26
+#ppp = 1.0e26; # laval says 4.4e26
+
+# This is testing stuff to match Laval
+n = 2.4e24 * doping_multiplier; 
+p = 8.0e23 * doping_multiplier; 
+np = 2.9e24 * doping_multiplier;
+pp = 1.8e24 * doping_multiplier;
+npp = 4.4e26 * doping_multiplier; 
+ppp = 4.4e26 * doping_multiplier; 
+
 adddope;
 set("name","n_core");
 set("x",Waveguide_Width_Nominal/2-n_width_core/2);
@@ -173,7 +191,7 @@ set("x span",n_width_core);
 set("y span",Waveguide_Height);
 set("z span",1.5e-6);
 set("dopant type","n");
-set("concentration",2.1e23);
+set("concentration",n);
 addtogroup("doping");
 
 adddope;
@@ -185,56 +203,64 @@ set("x span",p_width_core);
 set("y span",Waveguide_Height);
 set("z span",1.5e-6);
 set("dopant type","p");
-set("concentration",3.6e23);
+set("concentration",p);
 addtogroup("doping");
 
-adddope;
-set("name","n_slab");
-set("x",Waveguide_Width_Nominal/2 + n_width_slab/2);
-set("y",Waveguide_Height/2);
-set("z",0);
-set("x span",n_width_slab);
-set("y span",Waveguide_Height);
-set("z span",1.5e-6);
-set("dopant type","n");
-set("concentration",2.1e23);
-addtogroup("doping");
+if (n_width_slab > 0){
+    adddope;
+    set("name","n_slab");
+    set("x",Waveguide_Width_Nominal/2 + n_width_slab/2);
+    set("y",Waveguide_Height/2);
+    set("z",0);
+    set("x span",n_width_slab);
+    set("y span",Waveguide_Height);
+    set("z span",1.5e-6);
+    set("dopant type","n");
+    set("concentration",n);
+    addtogroup("doping");
+}
 
-adddope;
-set("name","p_slab");
-set("x",-Waveguide_Width_Nominal/2 - p_width_slab/2);
-set("y",Waveguide_Height/2);
-set("z",0);
-set("x span",p_width_slab);
-set("y span",Waveguide_Height);
-set("z span",1.5e-6);
-set("dopant type","p");
-set("concentration",3.6e23);
-addtogroup("doping");
+if (p_width_slab > 0){
+    adddope;
+    set("name","p_slab");
+    set("x",-Waveguide_Width_Nominal/2 - p_width_slab/2);
+    set("y",Waveguide_Height/2);
+    set("z",0);
+    set("x span",p_width_slab);
+    set("y span",Waveguide_Height);
+    set("z span",1.5e-6);
+    set("dopant type","p");
+    set("concentration",p);
+    addtogroup("doping");
+}
 
-adddope;
-set("name","n+");
-set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width/2);
-set("y",slab_height/2);
-set("z",0);
-set("x span",np_width);
-set("y span",slab_height);
-set("z span",1.5e-6);
-set("dopant type","n");
-set("concentration",2.9e24);
-addtogroup("doping");
+if (np_width > 0){
+    adddope;
+    set("name","n+");
+    set("x",Waveguide_Width_Nominal/2 + n_width_slab + np_width/2);
+    set("y",slab_height/2);
+    set("z",0);
+    set("x span",np_width);
+    set("y span",slab_height);
+    set("z span",1.5e-6);
+    set("dopant type","n");
+    set("concentration",np);
+    addtogroup("doping");
+}
 
-adddope;
-set("name","p+");
-set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width/2);
-set("y",slab_height/2);
-set("z",0);
-set("x span",pp_width);
-set("y span",slab_height);
-set("z span",1.5e-6);
-set("dopant type","p");
-set("concentration",1.8e24);
-addtogroup("doping");
+if (pp_width > 0){
+    adddope;
+    set("name","p+");
+    set("x",-Waveguide_Width_Nominal/2 - p_width_slab - pp_width/2);
+    set("y",slab_height/2);
+    set("z",0);
+    set("x span",pp_width);
+    set("y span",slab_height);
+    set("z span",1.5e-6);
+    set("dopant type","p");
+    set("concentration",pp);
+    addtogroup("doping");
+}
 
 adddope;
 set("name","n++");
@@ -245,7 +271,7 @@ set("x span",npp_width);
 set("y span",slab_height);
 set("z span",1.5e-6);
 set("dopant type","n");
-set("concentration",1.0e26);
+set("concentration",npp);
 addtogroup("doping");
 
 adddope;
@@ -257,7 +283,7 @@ set("x span",ppp_width);
 set("y span",slab_height);
 set("z span",1.5e-6);
 set("dopant type","p");
-set("concentration",1.0e26);
+set("concentration",ppp);
 addtogroup("doping");
 
 
